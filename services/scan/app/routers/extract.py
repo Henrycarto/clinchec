@@ -23,7 +23,7 @@ from app.config import Settings, get_settings
 from app.envelope import ApiError, Envelope, ok
 from app.models import icd_extractor
 from app.models.justification import get_drafter
-from app.models.scoring import PayerRule, evaluate
+from app.models.scoring import PayerRule, RuleClause, evaluate
 from app.models.soap_parser import MODEL_VERSION, ParsedNote, get_parser
 from app.schemas import (
     ExtractionResult,
@@ -180,4 +180,20 @@ async def _fetch_payer_rule(
             else None
         ),
         supporting_icd10_prefixes=tuple(data.get("icd10_codes") or ()),
+        clauses=tuple(
+            RuleClause(
+                polarity=clause.get("polarity", "covered"),
+                indication_text=clause.get("indication_text", ""),
+                indication_icd10_prefixes=tuple(
+                    clause.get("indication_icd10_prefixes") or ()
+                ),
+                required_duration_weeks=clause.get("required_duration_weeks"),
+                required_conservative_care=tuple(
+                    clause.get("required_conservative_care") or ()
+                ),
+                required_imaging=tuple(clause.get("required_imaging") or ()),
+                source_snippet=clause.get("source_snippet", ""),
+            )
+            for clause in (data.get("clauses") or [])
+        ),
     )

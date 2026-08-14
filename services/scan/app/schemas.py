@@ -40,6 +40,28 @@ class ApprovalBand(StrEnum):
     RED = "red"       # < 0.50
 
 
+class CoverageStatus(StrEnum):
+    """How confidently the payer's own criteria answer this request.
+
+    Separate from the approval band on purpose. The band stays green/amber/red
+    so the UI contract is unchanged, while this records what the score actually
+    rests on — the difference between "we evaluated the payer's criteria" and
+    "the payer publishes nothing about this indication" is invisible in a
+    number, and it changes what the clinician should do next.
+    """
+
+    #: A payer clause matched and its criteria were evaluated.
+    ADJUDICATED = "adjudicated"
+    #: The payer explicitly excludes this indication. Documentation cannot fix it.
+    EXCLUDED = "excluded"
+    #: The payer publishes clauses, none covering this indication. Likely to go
+    #: to manual review rather than auto-adjudication.
+    INDICATION_NOT_ADDRESSED = "indication_not_addressed"
+    #: No synced criteria for this payer and procedure at all. Scored against
+    #: the national baseline, which is a guess and must be labelled as one.
+    NO_CRITERIA_AVAILABLE = "no_criteria_available"
+
+
 class Sex(StrEnum):
     MALE = "male"
     FEMALE = "female"
@@ -124,6 +146,12 @@ class ApprovalAssessment(BaseModel):
     missing_elements: list[str] = Field(default_factory=list)
     basis: Literal["rule_engine", "payer_rule", "ml_model"] = "rule_engine"
     payer_slug: str | None = None
+    coverage_status: CoverageStatus = CoverageStatus.NO_CRITERIA_AVAILABLE
+    #: The payer's own sentence when a clause decided the outcome. Quoted to the
+    #: clinician verbatim, because an insurer's own wording is the strongest
+    #: thing to put in an appeal.
+    matched_indication: str | None = None
+    payer_quote: str | None = None
 
 
 class ClinicalJustification(BaseModel):
