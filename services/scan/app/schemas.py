@@ -157,6 +157,10 @@ class ApprovalAssessment(BaseModel):
     #: applied to the score. Marking a clause advisory and then not showing it
     #: would be strictly worse than never extracting it.
     advisories: list[str] = Field(default_factory=list)
+    #: How the governing clause was selected: 'text' (the note's own language),
+    #: 'icd10' (diagnosis codes), or 'none'. Recorded because the two mechanisms
+    #: carry different confidence and a reviewer should know which decided.
+    indication_match_method: Literal["text", "icd10", "none"] = "none"
 
 
 class ClinicalJustification(BaseModel):
