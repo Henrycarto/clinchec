@@ -5,7 +5,7 @@
   "description": "AI-powered prior authorization pre-screening assistant for the physician EHR workflow.",
   "packageManager": "npm@10.8.2",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.6.0"
   },
   "workspaces": [
     "apps/*",

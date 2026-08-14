@@ -12,7 +12,31 @@ concurrency:
 
 env:
   PYTHON_VERSION: '3.12'
-  NODE_VERSION: '20'
+  # 22, not 20: the dev-auth guard test runs on Node's native type stripping
+  # (--experimental-strip-types), which landed in 22.6.
+  NODE_VERSION: '22'
+
+# ---------------------------------------------------------------------------
+# This repository is the open scaffold. Three package directories are git
+# submodules pointing at private repositories holding the clinical core:
+#
+#   services/scan/app/models    clinchec-core-scan
+#   services/live/app/payers    clinchec-core-live
+#   services/forms/app/mappers  clinchec-core-forms
+#
+# CI therefore runs in one of two modes, and says which:
+#
+#   FULL     CORE_REPO_TOKEN secret is present -> submodules check out ->
+#            service tests and Docker builds run.
+#   SCAFFOLD no token -> the public surface is verified (web build, typecheck,
+#            lint, service linting) and core-dependent steps are skipped
+#            explicitly rather than silently passing.
+#
+# The public repo deliberately does not require a private-repo credential to
+# build. Adding one is a decision about putting a token that can read the core
+# IP into a public repo's secrets; until that is made, core test coverage lives
+# in the private repositories' own CI.
+# ---------------------------------------------------------------------------
 
 jobs:
   web:
@@ -38,9 +62,9 @@ jobs:
       - name: Test
         run: npm run test
 
-      # The dev auth bypass must be inert in a production build. This asserts
-      # it at the environment level, independently of the unit test, so a
-      # regression in the guard cannot ship unnoticed.
+      # The dev auth bypass must be inert in a production build. Asserted at the
+      # environment level, independently of the unit test, so a regression in
+      # the guard cannot ship unnoticed.
       - name: Assert dev auth bypass is refused in production
         env:
           NODE_ENV: production
@@ -75,8 +99,36 @@ jobs:
       fail-fast: false
       matrix:
         service: [scan, live, forms]
+    outputs:
+      core: ${{ steps.core.outputs.available }}
     steps:
       - uses: actions/checkout@v4
+
+      # Attempted, never required. The default GITHUB_TOKEN cannot read a
+      # private repository, so this only succeeds when CORE_REPO_TOKEN is set.
+      - name: Check out private core (optional)
+        id: core
+        continue-on-error: true
+        env:
+          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+        run: |
+          if [ -z "$CORE_REPO_TOKEN" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "CORE_REPO_TOKEN not set — running in SCAFFOLD mode."
+            exit 0
+          fi
+          git config --global url."https://x-access-token:${CORE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --recursive
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "Private core checked out — running in FULL mode."
+
+      - name: Report mode
+        run: |
+          if [ "${{ steps.core.outputs.available }}" = "true" ]; then
+            echo "::notice title=CI mode::FULL — private core present, service tests will run."
+          else
+            echo "::notice title=CI mode::SCAFFOLD — private core absent. Service tests are SKIPPED, not passing. Core coverage runs in clinchec-core-* CI."
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -95,23 +147,42 @@ jobs:
         if: matrix.service == 'scan'
         run: python -m spacy download en_core_web_sm
 
+      # Lints whatever is present. Without the core this covers the service
+      # scaffold — config, envelope, routers, schemas, main.
       - name: Lint
         working-directory: services/${{ matrix.service }}
         run: ruff check app
 
       - name: Test
+        if: steps.core.outputs.available == 'true'
         working-directory: services/${{ matrix.service }}
         run: pytest -q
+
+      - name: Skipped tests notice
+        if: steps.core.outputs.available != 'true'
+        run: |
+          echo "Service tests import the private core (app.models / app.payers / app.mappers)."
+          echo "They were SKIPPED, not passed. Set CORE_REPO_TOKEN to run them here."
 
   docker:
     name: Docker build
     runs-on: ubuntu-latest
     needs: [web, services]
+    # A service image without its core package would build and then fail at
+    # import. Only meaningful when the core is available.
+    if: needs.services.outputs.core == 'true'
     strategy:
       matrix:
         service: [scan, live, forms]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check out private core
+        env:
+          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${CORE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule update --init --recursive
 
       - uses: docker/setup-buildx-action@v3
 
