@@ -193,6 +193,12 @@ async def _fetch_payer_rule(
                 ),
                 required_imaging=tuple(clause.get("required_imaging") or ()),
                 source_snippet=clause.get("source_snippet", ""),
+                # Defaulting this to False would make an unscoped exclusion
+                # selectable, and an exclusion with no ICD scope matches every
+                # request — turning a clause meant to raise a question into one
+                # that denies the entire procedure. Default to advisory when the
+                # field is absent, so a stale Live version fails safe.
+                advisory=bool(clause.get("advisory", True)),
             )
             for clause in (data.get("clauses") or [])
         ),

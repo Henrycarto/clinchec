@@ -107,6 +107,8 @@ export const approvalAssessmentSchema = z.object({
   matched_indication: z.string().nullish(),
   /** The payer's own sentence when a clause decided the outcome. */
   payer_quote: z.string().nullish(),
+  /** Payer restrictions we could read but not scope: shown, never scored on. */
+  advisories: z.array(z.string()).default([]),
 });
 
 export const clinicalJustificationSchema = z.object({
