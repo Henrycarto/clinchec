@@ -2,7 +2,7 @@
 # Build context is the repo root — the app depends on packages/* via workspaces.
 
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /srv
 
 COPY package.json package-lock.json ./
@@ -14,7 +14,7 @@ RUN npm ci
 
 # ---------------------------------------------------------------------------
 # Local development — docker-compose mounts the source over this layer.
-FROM node:20-alpine AS dev
+FROM node:22-alpine AS dev
 WORKDIR /srv
 ENV NODE_ENV=development
 COPY --from=deps /srv/node_modules ./node_modules
@@ -23,7 +23,7 @@ EXPOSE 3000
 CMD ["npm", "run", "dev", "--workspace", "apps/web"]
 
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /srv
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -44,7 +44,7 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
 RUN npm run build --workspace apps/web
 
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /srv
 
 ENV NODE_ENV=production \
