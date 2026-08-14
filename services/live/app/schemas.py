@@ -54,6 +54,11 @@ class RuleClause(BaseModel):
     source_pattern: str = "unknown"
     source_snippet: str = ""
 
+    #: True when the indication could not be resolved to ICD-10 prefixes. The
+    #: clause is shown to the clinician but never decides the score — an
+    #: unscoped exclusion would otherwise deny every request for the procedure.
+    advisory: bool = False
+
     def matches(self, icd10_codes: list[str]) -> bool:
         """Whether this clause governs a patient presenting with these codes.
 

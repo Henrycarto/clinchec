@@ -152,6 +152,11 @@ class ApprovalAssessment(BaseModel):
     #: thing to put in an appeal.
     matched_indication: str | None = None
     payer_quote: str | None = None
+    #: Payer clauses we could read but could not scope to a diagnosis code — the
+    #: payer's restriction, surfaced as a question for the clinician rather than
+    #: applied to the score. Marking a clause advisory and then not showing it
+    #: would be strictly worse than never extracting it.
+    advisories: list[str] = Field(default_factory=list)
 
 
 class ClinicalJustification(BaseModel):

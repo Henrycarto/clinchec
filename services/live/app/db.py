@@ -10,6 +10,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from hashlib import md5
 from typing import Any
 
 from sqlalchemy import text
@@ -316,11 +317,11 @@ _UPSERT_CLAUSE = """
 INSERT INTO payer_rule_clauses (
     rule_id, polarity, indication_text, indication_icd10_prefixes,
     required_duration_weeks, required_conservative_care, required_imaging,
-    source_pattern, source_snippet
+    source_pattern, source_snippet, advisory
 )
 SELECT r.id, :polarity, :indication_text, :icd10_prefixes,
        :duration_weeks, :conservative_care, :imaging,
-       :source_pattern, :source_snippet
+       :source_pattern, :source_snippet, :advisory
 FROM payer_rules r
 JOIN payers p ON p.id = r.payer_id
 WHERE p.slug = :payer_slug AND r.cpt_code = :cpt_code AND r.plan_type = :plan_type
@@ -330,7 +331,8 @@ ON CONFLICT (rule_id, polarity, md5(indication_text)) DO UPDATE SET
     required_conservative_care = EXCLUDED.required_conservative_care,
     required_imaging           = EXCLUDED.required_imaging,
     source_pattern             = EXCLUDED.source_pattern,
-    source_snippet             = EXCLUDED.source_snippet
+    source_snippet             = EXCLUDED.source_snippet,
+    advisory                   = EXCLUDED.advisory
 """
 
 
@@ -360,12 +362,17 @@ async def replace_clauses(
         if rule_id is None:
             return 0
 
-        keys = [(c.polarity.value, c.indication_text) for c in clauses]
+        # A row-value comparison — `(polarity, indication_text) <> ALL(:keep)` —
+        # requires binding a list of tuples, which asyncpg rejects as an
+        # anonymous composite type. Comparing a single text key instead keeps
+        # this to a plain text[] and matches the unique index exactly.
+        keys = [f"{c.polarity.value}|{md5(c.indication_text.encode()).hexdigest()}"
+                for c in clauses]
         if keys:
             await session.execute(
                 text(
                     "DELETE FROM payer_rule_clauses WHERE rule_id = :rule_id "
-                    "AND (polarity, indication_text) <> ALL(:keep)"
+                    "AND (polarity || '|' || md5(indication_text)) <> ALL(:keep)"
                 ),
                 {"rule_id": rule_id, "keep": keys},
             )
@@ -390,6 +397,7 @@ async def replace_clauses(
                     "imaging": clause.required_imaging,
                     "source_pattern": clause.source_pattern,
                     "source_snippet": clause.source_snippet,
+                    "advisory": clause.advisory,
                 },
             )
     return len(clauses)
@@ -399,14 +407,16 @@ async def get_clauses(payer_slug: str, cpt_code: str, plan_type: str) -> list[Ru
     query = """
     SELECT c.polarity, c.indication_text, c.indication_icd10_prefixes,
            c.required_duration_weeks, c.required_conservative_care,
-           c.required_imaging, c.source_pattern, c.source_snippet
+           c.required_imaging, c.source_pattern, c.source_snippet, c.advisory
     FROM payer_rule_clauses c
     JOIN payer_rules r ON r.id = c.rule_id
     JOIN payers p      ON p.id = r.payer_id
     WHERE p.slug = :payer_slug AND r.cpt_code = :cpt_code AND r.plan_type = :plan_type
     -- Exclusions first: the scoring engine short-circuits on the first match,
     -- and a denial must win over a coverage clause that also matches.
-    ORDER BY (c.polarity = 'excluded') DESC, c.indication_text
+    -- Non-advisory first, then exclusions: the scoring engine short-circuits
+    -- on the first selectable match, and a denial must outrank coverage.
+    ORDER BY c.advisory, (c.polarity = 'excluded') DESC, c.indication_text
     """
     async with session_scope() as session:
         rows = (
@@ -426,6 +436,7 @@ async def get_clauses(payer_slug: str, cpt_code: str, plan_type: str) -> list[Ru
             required_imaging=list(row["required_imaging"] or []),
             source_pattern=row["source_pattern"],
             source_snippet=row["source_snippet"],
+            advisory=row["advisory"],
         )
         for row in rows
     ]

@@ -212,3 +212,64 @@ def test_clause_without_icd_prefixes_applies_unconditionally(scan) -> None:
     )
     result = evaluate(parsed, diagnoses, procedures[0], payer_rule=_rule(catch_all))
     assert result.coverage_status is CoverageStatus.ADJUDICATED
+
+
+# --- advisory clauses -------------------------------------------------------
+
+ADVISORY_EXCLUSION = RuleClause(
+    polarity="excluded",
+    indication_text="meniscectomy for medial or lateral meniscal root tears",
+    indication_icd10_prefixes=(),
+    advisory=True,
+)
+
+
+def test_advisory_exclusion_never_denies(scan) -> None:
+    """The regression this flag exists to prevent.
+
+    An unscoped exclusion matches every request. If it were selectable it would
+    deny the entire procedure for every patient — which is exactly what happened
+    when the flag was dropped crossing the Live/Scan boundary and defaulted to
+    False.
+    """
+    parsed, diagnoses, procedures = scan
+    result = evaluate(
+        parsed, diagnoses, procedures[0], payer_rule=_rule(COVERED, ADVISORY_EXCLUSION)
+    )
+
+    assert result.coverage_status is not CoverageStatus.EXCLUDED
+    assert result.band is ApprovalBand.GREEN
+
+
+def test_advisory_exclusion_is_shown_to_the_clinician(scan) -> None:
+    """Suppressing it would be worse than never extracting it."""
+    parsed, diagnoses, procedures = scan
+    result = evaluate(
+        parsed, diagnoses, procedures[0], payer_rule=_rule(COVERED, ADVISORY_EXCLUSION)
+    )
+
+    assert len(result.advisories) == 1
+    assert "meniscal root tears" in result.advisories[0]
+    assert "confirm" in result.advisories[0].lower()
+
+
+def test_only_advisory_clauses_means_indication_not_addressed(scan) -> None:
+    """Nothing selectable is not the same as no criteria at all."""
+    parsed, diagnoses, procedures = scan
+    result = evaluate(
+        parsed, diagnoses, procedures[0], payer_rule=_rule(ADVISORY_EXCLUSION)
+    )
+    assert result.coverage_status is CoverageStatus.INDICATION_NOT_ADDRESSED
+
+
+def test_scored_exclusion_still_denies(scan) -> None:
+    """Advisory must not weaken a properly scoped exclusion."""
+    parsed, diagnoses, procedures = scan
+    scoped = RuleClause(
+        polarity="excluded",
+        indication_text="osteoarthritis of the knee",
+        indication_icd10_prefixes=("M17",),
+        advisory=False,
+    )
+    result = evaluate(parsed, diagnoses, procedures[0], payer_rule=_rule(scoped))
+    assert result.coverage_status is CoverageStatus.EXCLUDED

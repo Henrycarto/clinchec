@@ -32,6 +32,8 @@ export const ruleClauseSchema = z.object({
   required_imaging: z.array(z.string()).default([]),
   source_pattern: z.string().default('unknown'),
   source_snippet: z.string().default(''),
+  /** Indication could not be resolved to codes: shown, never scored on. */
+  advisory: z.boolean().default(false),
 });
 
 export const payerRuleSchema = z.object({
