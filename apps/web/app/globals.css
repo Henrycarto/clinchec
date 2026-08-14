@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 99%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 201 96% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 42%;
+
+    --accent: 201 94% 94%;
+    --accent-foreground: 201 96% 24%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 89%;
+    --input: 214 32% 89%;
+    --ring: 201 96% 32%;
+
+    --radius: 0.625rem;
+
+    /* Approval bands — green ≥ 80%, amber 50–79%, red < 50%.
+       Foregrounds are chosen to clear WCAG AA on their own surface. */
+    --approve: 152 62% 28%;
+    --approve-foreground: 152 65% 16%;
+    --approve-surface: 150 60% 96%;
+    --approve-border: 152 45% 78%;
+
+    --caution: 32 88% 38%;
+    --caution-foreground: 30 90% 22%;
+    --caution-surface: 45 95% 95%;
+    --caution-border: 40 80% 76%;
+
+    --deny: 0 70% 42%;
+    --deny-foreground: 0 72% 27%;
+    --deny-surface: 0 80% 97%;
+    --deny-border: 0 65% 84%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 44% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 199 89% 55%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 217 33% 18%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 217 33% 18%;
+    --muted-foreground: 215 20% 68%;
+
+    --accent: 217 33% 20%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 33% 22%;
+    --input: 217 33% 22%;
+    --ring: 199 89% 55%;
+
+    --approve: 152 55% 55%;
+    --approve-foreground: 150 60% 88%;
+    --approve-surface: 152 40% 14%;
+    --approve-border: 152 35% 28%;
+
+    --caution: 40 90% 60%;
+    --caution-foreground: 45 90% 88%;
+    --caution-surface: 36 45% 14%;
+    --caution-border: 38 40% 30%;
+
+    --deny: 0 75% 62%;
+    --deny-foreground: 0 80% 89%;
+    --deny-surface: 0 45% 15%;
+    --deny-border: 0 40% 32%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  /* Clinicians navigate this by keyboard between patients; the focus ring has
+     to be unmissable rather than tasteful. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Inline highlight for an extracted span inside the original note. */
+  .entity-mark {
+    @apply rounded-[3px] px-[2px] py-[1px] transition-colors;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-black/5 to-transparent;
+    content: '';
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

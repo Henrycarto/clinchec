@@ -1,0 +1,13 @@
+{
+  "name": "@clinchec/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Practice admin view — denial analytics, payer performance, user management. Not yet started.",
+  "scripts": {
+    "dev": "echo \"@clinchec/dashboard is not implemented yet\" && exit 0",
+    "build": "echo \"@clinchec/dashboard is not implemented yet\" && exit 0",
+    "lint": "echo \"@clinchec/dashboard is not implemented yet\" && exit 0",
+    "typecheck": "echo \"@clinchec/dashboard is not implemented yet\" && exit 0",
+    "clean": "echo \"nothing to clean\" && exit 0"
+  }
+}

@@ -1,0 +1,9 @@
+[submodule "services/scan/app/models"]
+	path = services/scan/app/models
+	url = https://github.com/Henrycarto/clinchec-core-scan.git
+[submodule "services/live/app/payers"]
+	path = services/live/app/payers
+	url = https://github.com/Henrycarto/clinchec-core-live.git
+[submodule "services/forms/app/mappers"]
+	path = services/forms/app/mappers
+	url = https://github.com/Henrycarto/clinchec-core-forms.git

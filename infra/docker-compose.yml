@@ -1,0 +1,193 @@
+name: clinchec
+
+x-python-env: &python-env
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://clinchec:clinchec_dev_password@postgres:5432/clinchec}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/1}
+  CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  ENVIRONMENT: local
+
+x-depends-core: &depends-core
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: clinchec-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clinchec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinchec_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-clinchec}
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-clinchec} -d ${POSTGRES_DB:-clinchec}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: clinchec-redis
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  scan:
+    build:
+      context: ../services/scan
+      dockerfile: Dockerfile
+    container_name: clinchec-scan
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-scan
+      SPACY_MODEL: ${SPACY_MODEL:-en_core_web_sm}
+      SPACY_CLINICAL_MODEL: ${SPACY_CLINICAL_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      JUSTIFICATION_ENABLED: ${JUSTIFICATION_ENABLED:-false}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - '${SCAN_PORT:-8001}:8000'
+    depends_on: *depends-core
+    volumes:
+      - ../services/scan/app:/srv/app:ro
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  live:
+    build:
+      context: ../services/live
+      dockerfile: Dockerfile
+    container_name: clinchec-live
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-live
+      PAYER_POLL_INTERVAL_MINUTES: ${PAYER_POLL_INTERVAL_MINUTES:-360}
+      PAYER_HTTP_TIMEOUT_SECONDS: ${PAYER_HTTP_TIMEOUT_SECONDS:-30}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - '${LIVE_PORT:-8002}:8000'
+    depends_on: *depends-core
+    volumes:
+      - ../services/live/app:/srv/app:ro
+
+  live-worker:
+    build:
+      context: ../services/live
+      dockerfile: Dockerfile
+    container_name: clinchec-live-worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-live-worker
+    # Override the image's HTTP probe — a Celery worker serves no HTTP. Asking
+    # the worker to answer a ping is the equivalent liveness signal.
+    healthcheck:
+      test: ['CMD-SHELL', 'celery -A app.tasks.celery_app inspect ping -t 10 || exit 1']
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      live:
+        condition: service_started
+
+  live-beat:
+    build:
+      context: ../services/live
+      dockerfile: Dockerfile
+    container_name: clinchec-live-beat
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-live-beat
+    # Beat exposes nothing to probe — no HTTP port, and it does not answer the
+    # worker ping. Reporting no health is honest; inheriting the image's HTTP
+    # probe would report a permanent false failure.
+    healthcheck:
+      disable: true
+    depends_on:
+      redis:
+        condition: service_healthy
+      live-worker:
+        condition: service_started
+
+  forms:
+    build:
+      context: ../services/forms
+      dockerfile: Dockerfile
+    container_name: clinchec-forms
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-forms
+      SCAN_SERVICE_URL: http://scan:8000
+      LIVE_SERVICE_URL: http://live:8000
+      FORMS_EXPORT_BUCKET: ${FORMS_EXPORT_BUCKET:-clinchec-dev-exports}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - '${FORMS_PORT:-8003}:8000'
+    depends_on: *depends-core
+    volumes:
+      - ../services/forms/app:/srv/app:ro
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    container_name: clinchec-web
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SCAN_API_URL: ${NEXT_PUBLIC_SCAN_API_URL:-http://localhost:8001}
+      NEXT_PUBLIC_LIVE_API_URL: ${NEXT_PUBLIC_LIVE_API_URL:-http://localhost:8002}
+      NEXT_PUBLIC_FORMS_API_URL: ${NEXT_PUBLIC_FORMS_API_URL:-http://localhost:8003}
+      FHIR_ISSUER: ${FHIR_ISSUER:-}
+      FHIR_CLIENT_ID: ${FHIR_CLIENT_ID:-}
+      FHIR_CLIENT_SECRET: ${FHIR_CLIENT_SECRET:-}
+      FHIR_REDIRECT_URI: ${FHIR_REDIRECT_URI:-http://localhost:3000/api/auth/callback}
+      FHIR_SCOPES: ${FHIR_SCOPES:-openid fhirUser launch patient/Patient.read offline_access}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-session-secret-change-me-32b}
+      # Local-only auth bypass; refused when NODE_ENV=production. See .env.example.
+      DEV_AUTH_BYPASS: ${DEV_AUTH_BYPASS:-false}
+    ports:
+      - '3000:3000'
+    depends_on:
+      - scan
+      - live
+      - forms
+    volumes:
+      - ../apps/web:/srv/apps/web
+      - ../packages:/srv/packages
+      - web_node_modules:/srv/node_modules
+      - web_next_cache:/srv/apps/web/.next
+
+volumes:
+  pgdata:
+  redisdata:
+  web_node_modules:
+  web_next_cache:

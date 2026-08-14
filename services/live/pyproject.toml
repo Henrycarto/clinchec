@@ -1,0 +1,31 @@
+[project]
+name = "clinchec-live"
+version = "0.1.0"
+description = "Clinchec Live — payer portal poller and rules database"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+ignore = [
+    "E501",
+    # FastAPI's dependency-injection idiom is `x: T = Depends(...)`. B008 flags
+    # it as a mutable-default bug, which it is not here.
+    "B008",
+    # Pydantic v2 generic models require the `Generic[T]` form; PEP 695 type
+    # parameters are not yet supported by its metaclass.
+    "UP046",
+    "UP047",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["ignore::DeprecationWarning"]
