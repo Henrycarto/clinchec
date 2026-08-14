@@ -21,6 +21,7 @@ from app.db import (
     get_rule,
     init_engine,
     record_revision,
+    replace_clauses,
     touch_rule,
     upsert_rule,
 )
@@ -36,6 +37,11 @@ _MATERIAL_FIELDS = (
     "required_imaging",
     "icd10_codes",
 )
+
+#: Clause changes are reported separately — a new exclusion is the single most
+#: consequential thing a payer can publish, and it must never be buried in a
+#: list diff alongside a reworded criteria paragraph.
+_CLAUSE_FIELD = "clauses"
 
 
 async def apply_drafts(payer_slug: str, drafts: list[RuleDraft]) -> SyncReport:
@@ -60,9 +66,16 @@ async def apply_drafts(payer_slug: str, drafts: list[RuleDraft]) -> SyncReport:
 
         inserted = await upsert_rule(draft, checksum)
 
+        # Clauses are replaced wholesale, so a dropped exclusion widens coverage
+        # instead of lingering and denying requests the payer now approves.
+        await replace_clauses(payer_slug, draft.cpt_code, plan_type, draft.clauses)
+
         if inserted:
             report.created += 1
-            logger.info("%s/%s: new rule", payer_slug, draft.cpt_code)
+            logger.info(
+                "%s/%s: new rule (%d clause(s))",
+                payer_slug, draft.cpt_code, len(draft.clauses),
+            )
             continue
 
         report.updated += 1
@@ -94,7 +107,44 @@ def _diff(previous, draft: RuleDraft) -> dict:  # noqa: ANN001
                 changes[field] = {"previous": before, "current": after}
         elif before != after:
             changes[field] = {"previous": before, "current": after}
+
+    clause_diff = _diff_clauses(
+        getattr(previous, "clauses", []) or [], draft.clauses
+    )
+    if clause_diff:
+        changes[_CLAUSE_FIELD] = clause_diff
+
     return changes
+
+
+def _diff_clauses(previous: list, current: list) -> dict:  # noqa: ANN001
+    """Report clauses added, removed, or flipped in polarity.
+
+    Reported separately from the flat criteria fields because the consequences
+    differ in kind. A new *exclusion* means requests Clinchec approved yesterday
+    will be denied today — the practice needs to know before submitting, not
+    after a denial. A removed exclusion widens coverage and is worth surfacing
+    for the opposite reason.
+    """
+    def key(clause) -> tuple[str, str]:  # noqa: ANN001
+        polarity = getattr(clause.polarity, "value", clause.polarity)
+        return (polarity, " ".join(clause.indication_text.split()))
+
+    before = {key(c): c for c in previous}
+    after = {key(c): c for c in current}
+
+    added = [k for k in after if k not in before]
+    removed = [k for k in before if k not in after]
+    if not added and not removed:
+        return {}
+
+    return {
+        "added": [{"polarity": p, "indication": i} for p, i in added],
+        "removed": [{"polarity": p, "indication": i} for p, i in removed],
+        # Surfaced explicitly so an alerting rule can key on it directly.
+        "new_exclusions": [i for p, i in added if p == "excluded"],
+        "lifted_exclusions": [i for p, i in removed if p == "excluded"],
+    }
 
 
 # ---------------------------------------------------------------------------

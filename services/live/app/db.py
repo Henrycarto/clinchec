@@ -21,7 +21,15 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config import Settings
-from app.schemas import CrawlResult, PayerRuleResult, PayerSummary, PlanType, RuleDraft
+from app.schemas import (
+    CrawlResult,
+    PayerRuleResult,
+    PayerSummary,
+    PlanType,
+    Polarity,
+    RuleClause,
+    RuleDraft,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +139,14 @@ async def get_rule(
         )
         row = result.mappings().first()
 
-    return _to_rule_result(row) if row else None
+    if row is None:
+        return None
+
+    rule = _to_rule_result(row)
+    rule.clauses = await get_clauses(
+        row["payer_slug"], row["cpt_code"], rule.plan_type.value
+    )
+    return rule
 
 
 async def list_rules(payer_slug: str, limit: int = 200) -> list[PayerRuleResult]:
@@ -295,6 +310,125 @@ async def upsert_rule(draft: RuleDraft, checksum: str) -> bool:
         )
         row = result.first()
     return bool(row and row[1])
+
+
+_UPSERT_CLAUSE = """
+INSERT INTO payer_rule_clauses (
+    rule_id, polarity, indication_text, indication_icd10_prefixes,
+    required_duration_weeks, required_conservative_care, required_imaging,
+    source_pattern, source_snippet
+)
+SELECT r.id, :polarity, :indication_text, :icd10_prefixes,
+       :duration_weeks, :conservative_care, :imaging,
+       :source_pattern, :source_snippet
+FROM payer_rules r
+JOIN payers p ON p.id = r.payer_id
+WHERE p.slug = :payer_slug AND r.cpt_code = :cpt_code AND r.plan_type = :plan_type
+ON CONFLICT (rule_id, polarity, md5(indication_text)) DO UPDATE SET
+    indication_icd10_prefixes  = EXCLUDED.indication_icd10_prefixes,
+    required_duration_weeks    = EXCLUDED.required_duration_weeks,
+    required_conservative_care = EXCLUDED.required_conservative_care,
+    required_imaging           = EXCLUDED.required_imaging,
+    source_pattern             = EXCLUDED.source_pattern,
+    source_snippet             = EXCLUDED.source_snippet
+"""
+
+
+async def replace_clauses(
+    payer_slug: str,
+    cpt_code: str,
+    plan_type: str,
+    clauses: list[RuleClause],
+) -> int:
+    """Write a rule's clauses, removing any the payer no longer publishes.
+
+    Deletion matters as much as insertion: a bulletin that drops an exclusion
+    has *widened* coverage, and leaving the stale clause behind would keep
+    denying requests the payer now approves.
+    """
+    async with session_scope() as session:
+        rule_id = (
+            await session.execute(
+                text(
+                    "SELECT r.id FROM payer_rules r JOIN payers p ON p.id = r.payer_id "
+                    "WHERE p.slug = :payer_slug AND r.cpt_code = :cpt_code "
+                    "AND r.plan_type = :plan_type"
+                ),
+                {"payer_slug": payer_slug, "cpt_code": cpt_code, "plan_type": plan_type},
+            )
+        ).scalar_one_or_none()
+        if rule_id is None:
+            return 0
+
+        keys = [(c.polarity.value, c.indication_text) for c in clauses]
+        if keys:
+            await session.execute(
+                text(
+                    "DELETE FROM payer_rule_clauses WHERE rule_id = :rule_id "
+                    "AND (polarity, indication_text) <> ALL(:keep)"
+                ),
+                {"rule_id": rule_id, "keep": keys},
+            )
+        else:
+            await session.execute(
+                text("DELETE FROM payer_rule_clauses WHERE rule_id = :rule_id"),
+                {"rule_id": rule_id},
+            )
+
+        for clause in clauses:
+            await session.execute(
+                text(_UPSERT_CLAUSE),
+                {
+                    "payer_slug": payer_slug,
+                    "cpt_code": cpt_code,
+                    "plan_type": plan_type,
+                    "polarity": clause.polarity.value,
+                    "indication_text": clause.indication_text,
+                    "icd10_prefixes": clause.indication_icd10_prefixes,
+                    "duration_weeks": clause.required_duration_weeks,
+                    "conservative_care": clause.required_conservative_care,
+                    "imaging": clause.required_imaging,
+                    "source_pattern": clause.source_pattern,
+                    "source_snippet": clause.source_snippet,
+                },
+            )
+    return len(clauses)
+
+
+async def get_clauses(payer_slug: str, cpt_code: str, plan_type: str) -> list[RuleClause]:
+    query = """
+    SELECT c.polarity, c.indication_text, c.indication_icd10_prefixes,
+           c.required_duration_weeks, c.required_conservative_care,
+           c.required_imaging, c.source_pattern, c.source_snippet
+    FROM payer_rule_clauses c
+    JOIN payer_rules r ON r.id = c.rule_id
+    JOIN payers p      ON p.id = r.payer_id
+    WHERE p.slug = :payer_slug AND r.cpt_code = :cpt_code AND r.plan_type = :plan_type
+    -- Exclusions first: the scoring engine short-circuits on the first match,
+    -- and a denial must win over a coverage clause that also matches.
+    ORDER BY (c.polarity = 'excluded') DESC, c.indication_text
+    """
+    async with session_scope() as session:
+        rows = (
+            await session.execute(
+                text(query),
+                {"payer_slug": payer_slug, "cpt_code": cpt_code, "plan_type": plan_type},
+            )
+        ).mappings().all()
+
+    return [
+        RuleClause(
+            polarity=Polarity(row["polarity"]),
+            indication_text=row["indication_text"],
+            indication_icd10_prefixes=list(row["indication_icd10_prefixes"] or []),
+            required_duration_weeks=row["required_duration_weeks"],
+            required_conservative_care=list(row["required_conservative_care"] or []),
+            required_imaging=list(row["required_imaging"] or []),
+            source_pattern=row["source_pattern"],
+            source_snippet=row["source_snippet"],
+        )
+        for row in rows
+    ]
 
 
 async def record_revision(payer_slug: str, cpt_code: str, plan_type: str, diff: dict) -> None:

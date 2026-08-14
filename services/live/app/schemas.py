@@ -24,6 +24,50 @@ class CrawlStatus(StrEnum):
     SKIPPED = "skipped"
 
 
+class Polarity(StrEnum):
+    COVERED = "covered"
+    EXCLUDED = "excluded"
+
+
+class RuleClause(BaseModel):
+    """One indication-scoped adjudication within a payer rule.
+
+    A bulletin routinely both covers and excludes the same CPT depending on the
+    indication — Aetna CPB 0673 approves partial meniscectomy for mechanical
+    symptoms with mild OA and calls it experimental for meniscal root tears.
+    A single `requires_pa` boolean cannot express that, and collapsing it
+    produces a confident approval on a request the payer explicitly denies.
+    """
+
+    polarity: Polarity
+    #: The payer's own wording. Kept verbatim — this is what gets quoted on appeal.
+    indication_text: str
+    indication_icd10_prefixes: list[str] = Field(default_factory=list)
+
+    #: Evidence required. Only meaningful for `covered`; an exclusion denies on
+    #: indication alone, so no amount of documentation changes the outcome.
+    required_duration_weeks: int | None = None
+    required_conservative_care: list[str] = Field(default_factory=list)
+    required_imaging: list[str] = Field(default_factory=list)
+
+    #: Which adjudication pattern produced this, so a wrong clause is traceable.
+    source_pattern: str = "unknown"
+    source_snippet: str = ""
+
+    def matches(self, icd10_codes: list[str]) -> bool:
+        """Whether this clause governs a patient presenting with these codes.
+
+        A clause with no ICD prefixes applies unconditionally — some bulletins
+        adjudicate a procedure without scoping to an indication at all.
+        """
+        if not self.indication_icd10_prefixes:
+            return True
+        return any(
+            code.startswith(tuple(self.indication_icd10_prefixes))
+            for code in icd10_codes
+        )
+
+
 class PolicyDocument(BaseModel):
     """A payer policy page or PDF discovered by the crawler."""
 
@@ -53,6 +97,9 @@ class RuleDraft(BaseModel):
     required_imaging: list[str] = Field(default_factory=list)
     source_url: str | None = None
     effective_date: date | None = None
+    #: Indication-scoped adjudications parsed from the policy prose. Empty when
+    #: the bulletin adjudicates the procedure unconditionally.
+    clauses: list[RuleClause] = Field(default_factory=list)
 
     def checksum(self) -> str:
         """Stable digest of the adjudicating fields only.
@@ -74,6 +121,15 @@ class RuleDraft(BaseModel):
                 ",".join(sorted(self.required_conservative_care)),
                 ",".join(sorted(self.required_imaging)),
                 " ".join(self.criteria_text.split()),
+                # A clause appearing, vanishing or flipping polarity changes
+                # adjudication, so it has to move the checksum.
+                ";".join(sorted(
+                    f"{c.polarity.value}|{' '.join(c.indication_text.split())}"
+                    f"|{c.required_duration_weeks}"
+                    f"|{','.join(sorted(c.required_conservative_care))}"
+                    f"|{','.join(sorted(c.required_imaging))}"
+                    for c in self.clauses
+                )),
             ]
         )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
@@ -94,6 +150,7 @@ class PayerRuleResult(BaseModel):
     required_imaging: list[str] = Field(default_factory=list)
     source_url: str | None = None
     effective_date: date | None = None
+    clauses: list[RuleClause] = Field(default_factory=list)
     last_verified_at: datetime
     # How stale the record is. The UI shows this — a rule verified 4 hours ago
     # carries different weight than one last seen 6 weeks ago.

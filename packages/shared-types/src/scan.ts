@@ -80,6 +80,21 @@ export const scoreDriverSchema = z.object({
   satisfied: z.boolean(),
 });
 
+/**
+ * How confidently the payer's own criteria answer this request.
+ *
+ * Deliberately separate from the approval band. The band stays green/amber/red,
+ * while this records what the number rests on — "we evaluated this payer's
+ * clause" and "this payer publishes nothing about this indication" are
+ * indistinguishable in a score, and they call for different next steps.
+ */
+export const coverageStatusSchema = z.enum([
+  'adjudicated',
+  'excluded',
+  'indication_not_addressed',
+  'no_criteria_available',
+]);
+
 export const approvalAssessmentSchema = z.object({
   score: z.number().min(0).max(1),
   band: approvalBandSchema,
@@ -88,6 +103,10 @@ export const approvalAssessmentSchema = z.object({
   missing_elements: z.array(z.string()).default([]),
   basis: z.enum(['rule_engine', 'payer_rule', 'ml_model']).default('rule_engine'),
   payer_slug: z.string().nullish(),
+  coverage_status: coverageStatusSchema.default('no_criteria_available'),
+  matched_indication: z.string().nullish(),
+  /** The payer's own sentence when a clause decided the outcome. */
+  payer_quote: z.string().nullish(),
 });
 
 export const clinicalJustificationSchema = z.object({
@@ -141,6 +160,7 @@ export type Demographics = z.infer<typeof demographicsSchema>;
 export type ConditionDuration = z.infer<typeof conditionDurationSchema>;
 export type CodeCandidate = z.infer<typeof codeCandidateSchema>;
 export type ScoreDriver = z.infer<typeof scoreDriverSchema>;
+export type CoverageStatus = z.infer<typeof coverageStatusSchema>;
 export type ApprovalAssessment = z.infer<typeof approvalAssessmentSchema>;
 export type ClinicalJustification = z.infer<typeof clinicalJustificationSchema>;
 export type SoapSectionText = z.infer<typeof soapSectionTextSchema>;

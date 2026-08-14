@@ -12,6 +12,28 @@ export const planTypeSchema = z.enum([
 
 export const crawlStatusSchema = z.enum(['running', 'succeeded', 'failed', 'skipped']);
 
+export const polaritySchema = z.enum(['covered', 'excluded']);
+
+/**
+ * One indication-scoped adjudication within a payer rule.
+ *
+ * A bulletin can both cover and exclude the same CPT depending on why it is
+ * being requested — Aetna CPB 0673 approves partial meniscectomy for mechanical
+ * symptoms with mild osteoarthritis and calls it experimental for meniscal root
+ * tears. A single `requires_pa` flag cannot represent that.
+ */
+export const ruleClauseSchema = z.object({
+  polarity: polaritySchema,
+  /** The payer's own wording — quoted verbatim on appeal, never paraphrased. */
+  indication_text: z.string(),
+  indication_icd10_prefixes: z.array(z.string()).default([]),
+  required_duration_weeks: z.number().int().nullish(),
+  required_conservative_care: z.array(z.string()).default([]),
+  required_imaging: z.array(z.string()).default([]),
+  source_pattern: z.string().default('unknown'),
+  source_snippet: z.string().default(''),
+});
+
 export const payerRuleSchema = z.object({
   payer_slug: z.string(),
   payer_name: z.string(),
@@ -25,6 +47,7 @@ export const payerRuleSchema = z.object({
   required_imaging: z.array(z.string()).default([]),
   source_url: z.string().nullish(),
   effective_date: z.string().nullish(),
+  clauses: z.array(ruleClauseSchema).default([]),
   last_verified_at: z.string(),
   staleness_hours: z.number().default(0),
 });
@@ -40,6 +63,8 @@ export const payerSummarySchema = z.object({
 
 export type PlanType = z.infer<typeof planTypeSchema>;
 export type CrawlStatus = z.infer<typeof crawlStatusSchema>;
+export type Polarity = z.infer<typeof polaritySchema>;
+export type RuleClause = z.infer<typeof ruleClauseSchema>;
 export type PayerRule = z.infer<typeof payerRuleSchema>;
 export type PayerSummary = z.infer<typeof payerSummarySchema>;
 
