@@ -124,6 +124,22 @@ def test_delegation_is_surfaced_to_the_clinician(scan):
     assert "confirm this does not describe your patient" not in advisory
 
 
+def test_the_rationale_does_not_claim_the_payers_criteria(scan):
+    """The number and the caveat must not contradict each other.
+
+    "Approval likelihood 69% against UHC's current criteria" sitting two lines
+    above "UHC does not publish criteria for this procedure" is worse than
+    either alone: a reader who skims the first sentence takes away the opposite
+    of what the response says.
+    """
+    parsed, diagnoses, procedures = scan
+    assessment = evaluate(
+        parsed, diagnoses, procedures[0] if procedures else None, payer_rule=_rule(DELEGATED)
+    )
+    assert "UHC's current criteria" not in assessment.rationale
+    assert "national baseline criteria" in assessment.rationale
+
+
 def test_an_exclusion_still_denies_alongside_a_deferral(scan):
     """UHC publishes its exclusions even where it delegates its coverage rules.
 
