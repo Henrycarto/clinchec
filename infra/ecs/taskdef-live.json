@@ -16,7 +16,8 @@
       "environment": [
         { "name": "SERVICE_NAME", "value": "clinchec-live" },
         { "name": "ENVIRONMENT", "value": "production" },
-        { "name": "LOG_LEVEL", "value": "info" }
+        { "name": "LOG_LEVEL", "value": "info" },
+        { "name": "RUN_MIGRATIONS_ON_STARTUP", "value": "false" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:000000000000:secret:clinchec/database_url" },

@@ -63,6 +63,14 @@ resource "aws_cloudwatch_log_group" "worker" {
   kms_key_id        = aws_kms_key.main.arn
 }
 
+# The migration task's log is where a failed deploy gets diagnosed, so it
+# outlives the task by the same retention as everything else.
+resource "aws_cloudwatch_log_group" "migrate" {
+  name              = "/ecs/clinchec-migrate"
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.main.arn
+}
+
 # ---------------------------------------------------------------------------
 # IAM
 # ---------------------------------------------------------------------------
@@ -114,7 +122,14 @@ resource "aws_iam_role_policy" "execution_secrets" {
 }
 
 resource "aws_iam_role" "task" {
-  for_each = merge(local.services, { live-worker = local.services.live })
+  for_each = merge(local.services, {
+    live-worker = local.services.live
+    # Run-to-completion, not a service, but it still needs a task role: the
+    # database credential is injected by the execution role, and the task role
+    # is what would carry any AWS access the migration itself needed. It has
+    # none, which is the point — a migration reaches Postgres and nothing else.
+    migrate = local.services.live
+  })
 
   name               = "${local.name}-${each.key}-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
@@ -382,6 +397,61 @@ resource "aws_ecs_service" "services" {
   }
 
   depends_on = [aws_lb_listener.https]
+}
+
+# --- Schema migrations ------------------------------------------------------
+#
+# A task definition with no service. The deploy workflow runs one of these to
+# completion and refuses to roll the services forward unless it exits 0, so a
+# migration failure stops a deploy instead of producing tasks that start against
+# a schema missing the column they were built for.
+#
+# It runs *before* the new images roll out, which means every migration has to
+# be backward compatible with the code currently serving traffic: add columns
+# and tables, do not drop or rename them in the same release. A destructive
+# change is two deploys — stop using it, then remove it.
+#
+# `RUN_MIGRATIONS_ON_STARTUP` is false on the services for the same reason. If
+# they migrated on boot, a bad migration would fail every task, trip the
+# deployment circuit breaker, and roll back — noisier than a deploy that stops
+# at the migration step, and against a schema that may be half-applied.
+
+resource "aws_ecs_task_definition" "migrate" {
+  family                   = "clinchec-migrate"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task["migrate"].arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "clinchec-migrate"
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/clinchec-live:latest"
+      essential = true
+      command   = ["python", "-m", "app.migrations"]
+
+      environment = [
+        { name = "SERVICE_NAME", value = "clinchec-migrate" },
+        { name = "ENVIRONMENT", value = var.environment },
+        { name = "LOG_LEVEL", value = "info" },
+      ]
+
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = aws_secretsmanager_secret.database_url.arn },
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.migrate.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
 }
 
 # --- Celery worker and beat -------------------------------------------------

@@ -291,10 +291,10 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 resource "aws_flow_log" "main" {
-  vpc_id               = aws_vpc.main.id
-  traffic_type         = "ALL"
-  iam_role_arn         = aws_iam_role.flow_logs.arn
-  log_destination      = aws_cloudwatch_log_group.flow_logs.arn
+  vpc_id                   = aws_vpc.main.id
+  traffic_type             = "ALL"
+  iam_role_arn             = aws_iam_role.flow_logs.arn
+  log_destination          = aws_cloudwatch_log_group.flow_logs.arn
   max_aggregation_interval = 60
 }
 
