@@ -119,9 +119,37 @@ def test_delegation_is_surfaced_to_the_clinician(scan):
     )
     assert assessment.advisories
     advisory = assessment.advisories[0]
-    assert "does not publish criteria" in advisory
+    assert "delegated to InterQual" in advisory
+    assert "reflects general clinical guidance" in advisory
     # Worded as a limitation of the score, not as a restriction on the patient.
     assert "confirm this does not describe your patient" not in advisory
+
+
+def test_a_routing_advisory_keeps_its_own_wording(scan):
+    """Medicare Advantage deferrals and vendor deferrals say different things.
+
+    "Review is delegated to InterQual" and "review is governed by a CMS LCD
+    table" are both `delegated`, and a fixed preamble in front of the clause
+    text either duplicates one or misdescribes the other.
+    """
+    routed = RuleClause(
+        polarity="delegated",
+        indication_text=(
+            "Under this Medicare Advantage policy, review of surgery of the "
+            "knee is governed by: CMS LCD, UnitedHealthcare commercial policy. "
+            "The plan does not restate the criteria, so this request cannot be "
+            "pre-screened against them here."
+        ),
+        source_snippet="Surgery of the Knee — refer to the table for Surgery of the Knee",
+        advisory=True,
+    )
+    parsed, diagnoses, procedures = scan
+    assessment = evaluate(
+        parsed, diagnoses, procedures[0] if procedures else None, payer_rule=_rule(routed)
+    )
+    advisory = assessment.advisories[0]
+    assert advisory.startswith("UHC: Under this Medicare Advantage policy")
+    assert "CMS LCD" in advisory
 
 
 def test_the_rationale_does_not_claim_the_payers_criteria(scan):

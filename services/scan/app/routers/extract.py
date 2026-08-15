@@ -89,7 +89,9 @@ async def extract(
     # --- 3. Score --------------------------------------------------------
     payer_rule = None
     if payload.payer_slug and procedure is not None:
-        payer_rule = await _fetch_payer_rule(settings, payload.payer_slug, procedure.code)
+        payer_rule = await _fetch_payer_rule(
+            settings, payload.payer_slug, procedure.code, payload.plan_type
+        )
 
     assessment = evaluate(parsed, diagnoses, procedure, payer_rule=payer_rule)
 
@@ -159,17 +161,26 @@ async def _fetch_payer_rule(
     settings: Settings,
     payer_slug: str,
     cpt_code: str,
+    plan_type: str | None = None,
 ) -> PayerRule | None:
     """Ask Clinchec Live for this payer's current criteria.
+
+    `plan_type` matters more than it looks. The same payer adjudicates the same
+    CPT differently by line of business: UnitedHealthcare states its own criteria
+    for a total knee replacement under a commercial plan and routes the Medicare
+    Advantage version to a CMS coverage determination. Without it, Live returns
+    whichever rule it holds by default and the score is computed against the
+    wrong line of business — silently, because both records look equally real.
 
     Live being unavailable must never fail a scan — the rule engine simply
     falls back to the national baseline and reports `basis="rule_engine"`, so
     the clinician still gets a score and knows which basis produced it.
     """
     url = f"{settings.live_service_url.rstrip('/')}/rules/{payer_slug}/{cpt_code}"
+    params = {"plan_type": plan_type} if plan_type else None
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(url)
+            response = await client.get(url, params=params)
         if response.status_code == 404:
             return None
         response.raise_for_status()
