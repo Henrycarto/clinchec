@@ -137,6 +137,24 @@ async def extract(
     return envelope
 
 
+def _polarity(value: object) -> str:
+    """Clause polarity from the Live payload, failing safe on anything new.
+
+    Live and Scan deploy independently, so Scan will meet polarities it predates.
+    An unrecognised one is coerced to `delegated` rather than `covered`: the
+    honest reading of "Live is telling us something about this clause that this
+    build does not understand" is that we cannot score it. Defaulting to covered
+    would score the request against a clause whose meaning we just admitted to
+    not knowing.
+    """
+    if value in ("covered", "excluded", "delegated"):
+        return str(value)
+    if value is not None:
+        logger.warning("Unknown clause polarity %r from Live; treating as delegated", value)
+        return "delegated"
+    return "covered"
+
+
 async def _fetch_payer_rule(
     settings: Settings,
     payer_slug: str,
@@ -182,7 +200,7 @@ async def _fetch_payer_rule(
         supporting_icd10_prefixes=tuple(data.get("icd10_codes") or ()),
         clauses=tuple(
             RuleClause(
-                polarity=clause.get("polarity", "covered"),
+                polarity=_polarity(clause.get("polarity")),
                 indication_text=clause.get("indication_text", ""),
                 indication_icd10_prefixes=tuple(
                     clause.get("indication_icd10_prefixes") or ()

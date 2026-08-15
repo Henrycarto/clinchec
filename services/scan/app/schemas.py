@@ -57,6 +57,13 @@ class CoverageStatus(StrEnum):
     #: The payer publishes clauses, none covering this indication. Likely to go
     #: to manual review rather than auto-adjudication.
     INDICATION_NOT_ADDRESSED = "indication_not_addressed"
+    #: The payer adjudicates this procedure against criteria it does not
+    #: publish. UnitedHealthcare defers its surgical policies to InterQual:
+    #: "Surgery of the knee is proven and medically necessary in certain
+    #: circumstances. For medical necessity clinical coverage criteria, refer to
+    #: the InterQual CP: Procedures." The circumstances are the part we cannot
+    #: see, so the score rests on the national baseline and says so.
+    CRITERIA_DELEGATED = "criteria_delegated"
     #: No synced criteria for this payer and procedure at all. Scored against
     #: the national baseline, which is a guess and must be labelled as one.
     NO_CRITERIA_AVAILABLE = "no_criteria_available"
