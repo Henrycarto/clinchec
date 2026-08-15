@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     # deployment is useful before its first crawl completes.
     seed_rules_on_startup: bool = True
 
+    # Apply pending schema migrations at startup. On by default: the previous
+    # arrangement relied on Postgres's initdb hook, which runs only against an
+    # empty data directory, so four migrations reached fresh databases and no
+    # others. Turn this off only where a separate migrate step is guaranteed to
+    # have run first — the compose stack has one, and it calls the same code.
+    run_migrations_on_startup: bool = True
+
     cors_origins: str = "http://localhost:3000"
 
     @property

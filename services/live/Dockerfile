@@ -16,6 +16,9 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 COPY app ./app
+# Baked in, not mounted: the image has to be able to migrate the database it
+# connects to, in ECS as well as in compose.
+COPY migrations ./migrations
 
 RUN useradd --create-home --uid 10001 clinchec \
     && chown -R clinchec:clinchec /srv

@@ -94,7 +94,10 @@ is what it is and fix the note. An opaque 43% changes no behaviour.
 
 ## Data model notes
 
-Full schema: `infra/sql/001_init.sql`.
+Full schema: `services/live/migrations/001_init.sql`. Migrations are
+applied by `services/live/app/migrations.py` — at Live's startup, and by a
+one-shot `migrate` step the rest of the stack waits on. Live is the only
+service with database access, which is why it owns them.
 
 - **`scans` stores no note text.** Only a SHA-256 digest for deduplication, the
   character count, and the de-identified structured extraction. The note itself
