@@ -181,6 +181,7 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
 
   const affirmedCount = extraction.entities.filter((entity) => !entity.negated).length;
 
+
   return (
     <div className={cn('space-y-5', className)}>
       <ApprovalScorePanel approval={approval} />
@@ -301,6 +302,16 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{driver.label}</p>
                     <p className="text-sm text-muted-foreground">{driver.detail}</p>
+                    {/* What closing this gap is worth, in the same units as the
+                        column on the right. The clinician's next question after
+                        "what is missing" is "does fixing it matter", and the
+                        score's own weights answer it exactly. */}
+                    {driver.potential_delta ? (
+                      <p className="mt-1 text-xs font-medium text-caution-foreground">
+                        Documenting this adds {Math.round(driver.potential_delta * 100)}{' '}
+                        points
+                      </p>
+                    ) : null}
                   </div>
 
                   <span
@@ -333,6 +344,14 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Deliberately not annotated with what each gap is worth.
+                    `missing_elements` are strings and the arithmetic lives on
+                    the drivers, and the two lists do not correspond one to one —
+                    functional impairment appends a gap with no unmet driver
+                    beside it, so pairing them by position would put the wrong
+                    number against the wrong line. The Why-this-score tab shows
+                    each driver's worth exactly; joining them properly needs the
+                    engine to emit the key alongside the gap. */}
                 <ol className="space-y-2">
                   {approval.missing_elements.map((element, index) => (
                     <li key={element} className="flex gap-3 text-sm">

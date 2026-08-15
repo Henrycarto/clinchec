@@ -78,6 +78,12 @@ export const scoreDriverSchema = z.object({
   delta: z.number(),
   detail: z.string(),
   satisfied: z.boolean(),
+  /**
+   * Points documenting this would add. Present on unmet drivers only, and
+   * arithmetic over the score's own weights rather than a probability — see
+   * `potential_delta` in services/scan/app/schemas.py.
+   */
+  potential_delta: z.number().nullish(),
 });
 
 /**

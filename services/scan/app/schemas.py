@@ -143,6 +143,18 @@ class ScoreDriver(BaseModel):
     delta: float = Field(description="Signed contribution to the 0–1 score.")
     detail: str
     satisfied: bool
+    #: What satisfying this driver would be worth, for unmet drivers only.
+    #:
+    #: The swing, not the award: a driver sitting at -0.13 that would pay +0.13
+    #: moves the score by 0.26. Arithmetic over the score's own weights, which
+    #: is why it can be stated at all — it is not a probability. Clinchec has
+    #: never observed a submitted request's outcome, so "raises approval odds
+    #: by N%" would be invented where "adds 26 points" is checkable.
+    potential_delta: float | None = Field(
+        default=None,
+        description="Points this would add to the score if documented. Absent "
+        "on satisfied drivers and on anything documentation cannot fix.",
+    )
 
 
 class ApprovalAssessment(BaseModel):
