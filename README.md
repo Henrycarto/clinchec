@@ -163,10 +163,15 @@ auto-population they have to re-read in full, which saves nothing.
 
 It also refuses to help you fail. An invalid NPI (checked against the Luhn
 check digit) is dropped rather than passed through. A required attestation the
-note cannot support blocks submission rather than going out unchecked. When
-payer credentials are not configured it produces a downloadable packet and says
-so explicitly, never a silent no-op a clinician could mistake for a filed
-request.
+note cannot support blocks submission with a 422 rather than going out
+unchecked. When transmission is not enabled the response says so in as many
+words and reports `transmitted: false`, never a silent no-op a clinician could
+mistake for a filed request.
+
+What it does *not* do yet is render or store anything. The submission result
+carries an `export_url` of `/exports/<id>.pdf`, and no route serves that path;
+no PDF is generated and no object is written. The mapping is real, the packet
+is not.
 
 ## Technical architecture
 
@@ -388,10 +393,12 @@ feature list.
   transcribed criteria; setting it false runs the live crawl. Aetna and UHC
   have had hand-reviewed live runs. Anything added after them needs one before
   it is trusted.
-- **Submission does not transmit.** Forms produces a complete, validated packet
-  and says explicitly that nothing was sent. Real transmission needs per-payer
-  portal credentials, an executed BAA, and an X12 278 clearinghouse contract.
-  Those are commercial gates, not engineering ones.
+- **Submission neither transmits nor renders.** Forms produces a complete,
+  validated field mapping and says explicitly that nothing was sent. It does
+  not yet write the PDF its `export_url` points at, and no route serves that
+  path. Real transmission additionally needs per-payer portal credentials, an
+  executed BAA, and an X12 278 clearinghouse contract. Those last three are
+  commercial gates, not engineering ones; the export renderer is not.
 - **The clinical NER model is lexicon-driven.** Roughly 40 ICD-10 and 30 CPT
   surface forms with a statistical noun-chunk fallback. High precision on the
   codes that drive PA volume; the long tail is surfaced as low-confidence
@@ -400,8 +407,11 @@ feature list.
 - **pgvector is provisioned but unused.** The column, dimensions and HNSW index
   exist; nothing queries them yet. That is the seam for bootstrapping a new
   payer's rules from an existing one's similar criteria.
-- **`pa_requests` has a write path but no read path.** The PA request detail
-  page says so rather than rendering a fabricated record.
+- **`pa_requests` is a table and nothing else.** `001_init.sql` creates it and
+  indexes it; no service reads or writes it. Forms mints a request id per
+  submission and returns it without persisting a row, so a PA request does not
+  outlive its response. The detail page validates the identifier and reports
+  that the record is not retrievable rather than rendering a fabricated one.
 - **`apps/dashboard`,** the practice admin view, is a documented placeholder. It
   gets built once there are submitted outcomes to analyse.
 

@@ -23,10 +23,12 @@ const UUID_PATTERN =
 /**
  * A single prior authorization request.
  *
- * The `pa_requests` read path is not wired yet — the table and the write path
- * exist, the query does not. Rather than render a fabricated record, this page
- * validates the identifier and reports honestly that the record is not
- * retrievable, so nobody mistakes a placeholder for a filed request.
+ * Nothing persists a PA request yet. `001_init.sql` creates `pa_requests` and
+ * no service reads or writes it: services/forms mints an id per submission and
+ * returns it without a row, so there is nothing to look up by the time this
+ * page runs. Rather than render a fabricated record, it validates the
+ * identifier and reports honestly that the record is not retrievable, so
+ * nobody mistakes a placeholder for a filed request.
  */
 export default async function PaRequestDetailPage({ params }: { params: { id: string } }) {
   const session = await getSession();
