@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, TriangleAlert, XCircle } from 'lucide-react';
 
 import type { ApprovalAssessment, ApprovalBand } from '@clinchec/shared-types';
 
@@ -149,6 +149,41 @@ export function ApprovalScorePanel({
         <span className="translate-x-2">50 · review</span>
         <span>80 · likely · 100</span>
       </div>
+
+      {/*
+        What the number rests on.
+
+        A clinician will not act on a percentage from a system that will not say
+        where it came from, and Scan already computes the answer — which clause
+        governed, the insurer's own sentence, and any restriction it could read
+        but not scope. All of it arrived in the browser correctly typed and none
+        of it was rendered, so the most defensible part of the assessment was
+        the part nobody could see.
+      */}
+      {approval.payer_quote || approval.matched_indication ? (
+        <figure className="mt-4 border-t border-current/10 pt-4">
+          <blockquote className="border-l-2 border-current/25 pl-3 text-sm italic leading-relaxed">
+            “{approval.payer_quote || approval.matched_indication}”
+          </blockquote>
+          <figcaption className="mt-1.5 pl-3 text-xs text-muted-foreground">
+            {approval.payer_slug ? `${approval.payer_slug.toUpperCase()}, verbatim` : 'Payer, verbatim'}
+            {approval.indication_match_method && approval.indication_match_method !== 'none'
+              ? ` · matched on ${approval.indication_match_method === 'text' ? 'the note’s wording' : 'diagnosis codes'}`
+              : null}
+          </figcaption>
+        </figure>
+      ) : null}
+
+      {approval.advisories.length > 0 ? (
+        <ul className="mt-4 space-y-2 border-t border-current/10 pt-4">
+          {approval.advisories.map((advisory) => (
+            <li key={advisory} className="flex gap-2 text-xs leading-relaxed">
+              <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+              <span>{advisory}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }
