@@ -1,7 +1,8 @@
 """Async persistence for Clinchec Live.
 
-Schema is owned by `infra/sql/001_init.sql` — this module maps onto it rather
-than declaring its own DDL, so there is exactly one definition of the tables.
+Schema is owned by `migrations/001_init.sql` and the migrations after it —
+this module maps onto them rather than declaring its own DDL, so there is
+exactly one definition of the tables. `app/migrations.py` applies them.
 """
 
 from __future__ import annotations

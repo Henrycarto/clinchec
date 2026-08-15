@@ -40,11 +40,33 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.service_name = settings.service_name
     app.state.service_version = SERVICE_VERSION
     db.init_engine(settings)
+    await _migrate()
     await _seed_if_empty()
     logger.info("Clinchec Live ready (payers: %s)", ", ".join(REGISTERED_SLUGS))
     yield
     await db.dispose_engine()
     logger.info("Clinchec Live shutting down")
+
+
+async def _migrate() -> None:
+    """Bring the schema up to date before serving anything.
+
+    Deliberately fatal on failure, unlike seeding below. A service that starts
+    against a half-migrated schema serves reads that look fine right up until
+    they touch the column that never arrived — and the whole point of this step
+    is that nothing was tracking whether migrations had been applied.
+
+    Also invoked as a one-shot `migrate` step in compose so the Celery worker
+    cannot reach a database Live has not finished migrating. Both call the same
+    function; running it twice is a lock and a SELECT.
+    """
+    if not settings.run_migrations_on_startup:
+        logger.info("Startup migrations disabled; assuming the schema is current")
+        return
+
+    from app.migrations import apply_pending
+
+    await apply_pending(settings)
 
 
 async def _seed_if_empty() -> None:

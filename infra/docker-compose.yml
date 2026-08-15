@@ -26,7 +26,10 @@ services:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./sql:/docker-entrypoint-initdb.d:ro
+      # No initdb mount. That hook fires only when the data directory is empty,
+      # which is precisely why migrations 002-005 reached fresh databases and no
+      # others. The `migrate` service below owns this now — one mechanism that
+      # works on an empty database and a five-month-old one alike.
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-clinchec} -d ${POSTGRES_DB:-clinchec}']
       interval: 5s
@@ -73,6 +76,27 @@ services:
       retries: 5
       start_period: 40s
 
+  # One-shot: brings the schema up to date, then exits. Everything that touches
+  # the database waits for it to succeed, so a worker cannot reach a half-built
+  # schema during startup. It runs the same code Live runs at startup, and
+  # running it twice costs an advisory lock and a SELECT.
+  migrate:
+    build:
+      context: ../services/live
+      dockerfile: Dockerfile
+    container_name: clinchec-migrate
+    command: python -m app.migrations
+    environment:
+      <<: *python-env
+      SERVICE_NAME: clinchec-migrate
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../services/live/app:/srv/app:ro
+      - ../services/live/migrations:/srv/migrations:ro
+
   live:
     build:
       context: ../services/live
@@ -86,9 +110,13 @@ services:
       CORS_ORIGINS: http://localhost:3000
     ports:
       - '${LIVE_PORT:-8002}:8000'
-    depends_on: *depends-core
+    depends_on:
+      <<: *depends-core
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ../services/live/app:/srv/app:ro
+      - ../services/live/migrations:/srv/migrations:ro
 
   live-worker:
     build:
@@ -112,8 +140,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      live:
-        condition: service_started
+      migrate:
+        condition: service_completed_successfully
 
   live-beat:
     build:
