@@ -181,3 +181,49 @@ def test_gaps_are_never_paired_by_position(parser):
     by_position = [d.key for d in unmet]
     by_key = [g.driver_key for g in assessment.gaps]
     assert by_key != by_position[: len(by_key)]
+
+
+def test_a_gap_names_the_payer_that_demands_it(parser):
+    """Whose requirement it is, which the merge would otherwise erase.
+
+    `merged_with` takes the payer's value where it has one and the baseline's
+    otherwise, and afterwards they are indistinguishable — so provenance is read
+    before the merge and travels with the gap.
+    """
+    from app.models.scoring import PayerRule, RuleClause
+
+    parsed = parser.parse(THIN)
+    diagnoses, procedures = extract_codes(parsed.entities, THIN)
+    rule = PayerRule(
+        payer_slug="uhc",
+        cpt_code="27447",
+        required_duration_weeks=12,
+        requires_conservative_care=True,
+        clauses=(
+            RuleClause(
+                polarity="covered",
+                indication_text="advanced osteoarthritis",
+                required_duration_weeks=12,
+                required_conservative_care=("physical therapy",),
+                source_snippet="Total knee arthroplasty is considered medically necessary…",
+            ),
+        ),
+    )
+    assessment = evaluate(
+        parsed, diagnoses, procedures[0] if procedures else None, payer_rule=rule
+    )
+
+    by_key = {gap.driver_key: gap for gap in assessment.gaps}
+    assert by_key["duration"].required_by == "uhc"
+    assert "medically necessary" in (by_key["duration"].payer_quote or "")
+
+    # Laterality is a coding rule nobody's policy asked for, so it is not
+    # attributed to the payer — claiming it were would put words in their mouth.
+    assert by_key["laterality"].required_by is None
+    assert by_key["laterality"].payer_quote is None
+
+
+def test_baseline_gaps_are_not_attributed_to_a_payer(parser):
+    """With no payer rule, every gap comes from the national baseline."""
+    assessment = _assess(parser, THIN)
+    assert all(gap.required_by is None for gap in assessment.gaps)

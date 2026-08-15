@@ -115,6 +115,10 @@ export const scoreGapSchema = z.object({
   driver_key: z.string(),
   /** Points closing it would add, or null where nothing prices it. */
   potential_delta: z.number().nullish(),
+  /** The payer demanding this, or null where it is the national baseline. */
+  required_by: z.string().nullish(),
+  /** The payer clause that governed the request, verbatim. */
+  payer_quote: z.string().nullish(),
 });
 
 export const approvalAssessmentSchema = z.object({

@@ -175,6 +175,15 @@ class ScoreGap(BaseModel):
     #: recorded from a branch with no unmet driver, or one no documentation can
     #: close.
     potential_delta: float | None = None
+    #: The payer slug demanding this, or None where it comes from the national
+    #: baseline. The distinction is the product: "UnitedHealthcare requires 12
+    #: weeks of conservative care" is something a clinician can act on and quote
+    #: back on appeal, while "general clinical guidance suggests it" is advice.
+    required_by: str | None = None
+    #: The payer clause that governed the request, verbatim. Not a sentence
+    #: about this specific element — payers do not write them that way — but the
+    #: adjudication the requirement sits inside, which is what an appeal quotes.
+    payer_quote: str | None = None
 
 
 class ApprovalAssessment(BaseModel):

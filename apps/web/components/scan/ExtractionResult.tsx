@@ -357,7 +357,21 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
                       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-caution/15 text-[11px] font-semibold tabular-nums text-caution-foreground">
                         {index + 1}
                       </span>
-                      <span className="flex-1">{gap.text}</span>
+                      <span className="flex-1">
+                        {gap.text}
+                        {/* Who is asking. "UHC requires this" is something a
+                            clinician can act on and quote back on appeal;
+                            without the attribution every line reads as generic
+                            advice they may reasonably skip. */}
+                        {gap.required_by ? (
+                          <span
+                            className="ml-2 rounded border border-caution-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+                            title={gap.payer_quote ?? undefined}
+                          >
+                            {gap.required_by} requires
+                          </span>
+                        ) : null}
+                      </span>
                       {gap.potential_delta ? (
                         <span
                           className="shrink-0 text-xs font-semibold tabular-nums text-caution-foreground"
