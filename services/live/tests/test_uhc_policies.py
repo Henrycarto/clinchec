@@ -374,6 +374,67 @@ def test_an_unresolvable_pointer_degrades_to_the_route_alone():
     assert "UnitedHealthcare commercial policy —" not in drafts["27447"].criteria_text
 
 
+# --- licensed content ------------------------------------------------------
+
+
+def test_no_rule_carries_an_ama_code_description():
+    """CPT descriptions are AMA text; Clinchec holds no licence for them.
+
+    They are what a payer's Applicable Codes table exists to provide, they read
+    well at the top of a record, and they are not ours to store. This asserts
+    against the actual strings from each policy's own code table rather than a
+    pattern, so it fails on the real content rather than on a guess at its shape.
+
+    The same licence is why the CMS Medicare Coverage Database is unreachable —
+    its bulk export and its API both gate on an AMA agreement granting
+    "personal use only … non-commercial uses".
+    """
+    from app.utils.pdf import code_table, section
+
+    checked = 0
+    for name, entry in DOCUMENTS.items():
+        descriptions = code_table(
+            section(
+                entry["text"],
+                "Applicable Codes",
+                ["Description of Services", "Clinical Evidence",
+                 "Benefit Considerations", "References",
+                 "Policy History/Revision Information"],
+            )
+        )
+        if not descriptions:
+            continue
+        for draft in _parse(name):
+            haystack = " ".join(
+                [draft.criteria_text]
+                + [c.indication_text for c in draft.clauses]
+                + [c.source_snippet for c in draft.clauses]
+            )
+            for code, description in descriptions.items():
+                # Short descriptions collide with ordinary prose; the long ones
+                # are unmistakably the AMA descriptor.
+                if len(description) < 40:
+                    continue
+                assert description not in haystack, f"{name}/{code}"
+                checked += 1
+
+    assert checked, "no descriptions were available to check against"
+
+
+def test_the_record_still_says_which_procedure_it_is():
+    """Removing the description must not make a multi-procedure policy ambiguous.
+
+    Sleep Studies adjudicates home testing, polysomnography, MSLT and MWT from
+    one document. The payer's own policy title carries the distinction without
+    borrowing anyone's copyright.
+    """
+    drafts = _by_cpt(_parse("sleep-studies"))
+    assert drafts["95810"].criteria_text.startswith("Sleep Studies (95810)")
+
+    knee = _by_cpt(_parse("surgery-knee"))["27447"]
+    assert knee.criteria_text.startswith("Surgery of the Knee (27447)")
+
+
 # --- provenance ------------------------------------------------------------
 
 
