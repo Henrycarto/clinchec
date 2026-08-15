@@ -65,17 +65,22 @@ async def _crawl_all() -> list[dict]:
             # budget the moment two adapters shared a CDN.
             for adapter in adapters:
                 result, drafts = await adapter.safe_sync(client)
-                if drafts:
-                    report = await apply_drafts(adapter.slug, drafts)
-                    result.rules_changed = report.created + report.updated
+                # Called even with no drafts. A complete crawl that produced
+                # nothing is how a payer withdrawing every policy we track
+                # looks, and skipping the sweep here would make that the one
+                # case retirement never reaches.
+                report = await apply_drafts(adapter.slug, drafts, result)
+                result.rules_changed = report.created + report.updated
                 await record_crawl(result)
                 results.append(result)
                 logger.info(
-                    "%s: %s — %d rules seen, %d changed",
+                    "%s: %s — %d rules seen, %d changed, %d retired, %d counting",
                     adapter.slug,
                     result.status.value,
                     result.rules_seen,
                     result.rules_changed,
+                    report.retired,
+                    report.retiring,
                 )
     finally:
         await dispose_engine()
@@ -96,9 +101,8 @@ async def _crawl_one(payer_slug: str) -> dict:
     try:
         async with _client(settings) as client:
             result, drafts = await adapter.safe_sync(client)
-            if drafts:
-                report = await apply_drafts(adapter.slug, drafts)
-                result.rules_changed = report.created + report.updated
+            report = await apply_drafts(adapter.slug, drafts, result)
+            result.rules_changed = report.created + report.updated
             await record_crawl(result)
     finally:
         await dispose_engine()
