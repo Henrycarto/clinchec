@@ -89,6 +89,17 @@ def code_table(text: str) -> dict[str, str]:
     CPT-to-policy mapping derived rather than assumed — the alternative is a
     hand-maintained keyword table, and a wrong entry there is invisible until it
     mis-scores a request.
+
+    **Do not persist or serve the descriptions.** The codes themselves are
+    facts; their descriptions are AMA CPT text, and payers reproduce them under
+    a licence Clinchec does not hold. The same licence is why the CMS Medicare
+    Coverage Database is out of reach — its bulk export and its API both gate on
+    an AMA agreement granting "personal use only … non-commercial uses".
+
+    They are returned because reading a `code description` line is how the codes
+    are found at all, and because they are useful in a log while debugging an
+    extraction. Callers that only need scope should take `frozenset(...)` of the
+    result and let the descriptions go out of scope with the parse.
     """
     codes: dict[str, str] = {}
     for line in text.splitlines():
