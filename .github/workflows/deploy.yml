@@ -209,10 +209,15 @@ jobs:
           cluster: clinchec-${{ inputs.environment || 'staging' }}
           wait-for-service-stability: true
 
+  # Waits for the APIs, not just for the migration. The web app is a client of
+  # Scan, Live and Forms, so shipping it first means a UI calling endpoints that
+  # do not exist yet — and shipping it after a failed migration means a UI whose
+  # backends were deliberately left un-updated. Neither is a state worth being
+  # able to reach.
   deploy-web:
     name: Deploy web
     runs-on: ubuntu-latest
-    needs: push-images
+    needs: [push-images, migrate, deploy-ecs]
     environment: ${{ inputs.environment || 'staging' }}
     steps:
       - uses: actions/checkout@v4

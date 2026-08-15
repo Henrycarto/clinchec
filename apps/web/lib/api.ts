@@ -28,9 +28,35 @@ import { z } from 'zod';
  * a clinical judgement.
  */
 
-const SCAN_URL = process.env.NEXT_PUBLIC_SCAN_API_URL ?? 'http://localhost:8001';
-const LIVE_URL = process.env.NEXT_PUBLIC_LIVE_API_URL ?? 'http://localhost:8002';
-const FORMS_URL = process.env.NEXT_PUBLIC_FORMS_API_URL ?? 'http://localhost:8003';
+/**
+ * Where a service lives, which depends on who is asking.
+ *
+ * A browser reaches the services through their public URL. A server component
+ * reaches them from inside the network, where the public URL is wrong in a way
+ * that fails quietly: `http://localhost:8002` resolves to the web container
+ * itself, the fetch is refused, and a page that degrades gracefully on error
+ * renders as though the service had simply nothing to say.
+ */
+function serviceUrl(internal: string | undefined, browser: string | undefined, fallback: string) {
+  if (typeof window === 'undefined' && internal) return internal;
+  return browser ?? fallback;
+}
+
+const SCAN_URL = serviceUrl(
+  process.env.SCAN_SERVICE_URL,
+  process.env.NEXT_PUBLIC_SCAN_API_URL,
+  'http://localhost:8001',
+);
+const LIVE_URL = serviceUrl(
+  process.env.LIVE_SERVICE_URL,
+  process.env.NEXT_PUBLIC_LIVE_API_URL,
+  'http://localhost:8002',
+);
+const FORMS_URL = serviceUrl(
+  process.env.FORMS_SERVICE_URL,
+  process.env.NEXT_PUBLIC_FORMS_API_URL,
+  'http://localhost:8003',
+);
 
 export interface RequestOptions {
   signal?: AbortSignal;

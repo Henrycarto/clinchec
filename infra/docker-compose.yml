@@ -194,6 +194,11 @@ services:
       NEXT_PUBLIC_SCAN_API_URL: ${NEXT_PUBLIC_SCAN_API_URL:-http://localhost:8001}
       NEXT_PUBLIC_LIVE_API_URL: ${NEXT_PUBLIC_LIVE_API_URL:-http://localhost:8002}
       NEXT_PUBLIC_FORMS_API_URL: ${NEXT_PUBLIC_FORMS_API_URL:-http://localhost:8003}
+      # Server components fetch from inside the network, where the browser's
+      # localhost URLs point at the web container instead of at the service.
+      SCAN_SERVICE_URL: http://scan:8000
+      LIVE_SERVICE_URL: http://live:8000
+      FORMS_SERVICE_URL: http://forms:8000
       FHIR_ISSUER: ${FHIR_ISSUER:-}
       FHIR_CLIENT_ID: ${FHIR_CLIENT_ID:-}
       FHIR_CLIENT_SECRET: ${FHIR_CLIENT_SECRET:-}

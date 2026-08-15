@@ -59,6 +59,8 @@ export const payerSummarySchema = z.object({
   display_name: z.string(),
   portal_base_url: z.string().nullish(),
   rule_count: z.number().int().default(0),
+  /** Rules withdrawn because their source document stopped being published. */
+  retired_rule_count: z.number().int().default(0),
   last_crawled_at: z.string().nullish(),
   last_crawl_status: crawlStatusSchema.nullish(),
 });
