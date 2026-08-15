@@ -56,7 +56,11 @@ def _parse(name: str):
         payer_slug="uhc",
         url=entry["url"],
         title=name,
-        plan_type=PlanType.COMMERCIAL,
+        plan_type=(
+            PlanType.MEDICARE_ADVANTAGE
+            if entry.get("plan_type") == "medicare_advantage"
+            else PlanType.COMMERCIAL
+        ),
     )
     return adapter.parse(document, entry["text"])
 
@@ -163,6 +167,92 @@ def test_subject_is_the_nearest_statement_not_the_first_match():
     for clause in covered:
         assert not clause.indication_text.lower().startswith("sleeve gastrectomy")
         assert "medically necessary" in clause.indication_text
+
+
+# --- Medicare Advantage ----------------------------------------------------
+
+
+def test_medicare_advantage_records_where_the_criteria_live():
+    """MA policies route rather than argue; the route is the useful content.
+
+    Running the commercial necessity patterns over an MA policy finds almost
+    nothing, which is accurate and useless. CMS owns Medicare coverage, so the
+    plan document mostly says which CMS instrument applies — and a clinician
+    who knows the request is judged against an LCD table can go and read it.
+    """
+    drafts = _by_cpt(_parse("joint-procedures"))
+
+    for cpt_code in ("27130", "27446", "27447"):
+        draft = drafts[cpt_code]
+        assert draft.plan_type is PlanType.MEDICARE_ADVANTAGE
+        assert [c.polarity.value for c in draft.clauses] == ["delegated"]
+
+        clause = draft.clauses[0]
+        assert clause.source_pattern == "medicare_advantage_routing"
+        assert clause.advisory is True
+        assert "CMS LCD" in clause.indication_text
+        # No evidence standard exists to state, so none may be recorded.
+        assert draft.required_duration_weeks is None
+        assert draft.required_conservative_care == []
+        assert draft.required_imaging == []
+
+
+def test_routing_is_read_per_topic_not_per_document():
+    """One MA policy routes hip and knee differently, in adjacent sections.
+
+    A document-level read attaches whichever destination came first to both,
+    and the resulting record cites the wrong joint back to the payer.
+    """
+    drafts = _by_cpt(_parse("joint-procedures"))
+    hip = drafts["27130"].clauses[0]
+    knee = drafts["27447"].clauses[0]
+
+    assert "surgery of the hip" in hip.indication_text.lower()
+    assert "surgery of the knee" in knee.indication_text.lower()
+    assert "Surgery of the Hip" in hip.source_snippet
+    assert "Surgery of the Knee" in knee.source_snippet
+    assert "Knee" not in hip.source_snippet
+
+
+def test_a_named_cms_determination_survives_intact():
+    """The NCD number is the whole point of quoting the sentence.
+
+    "(100" instead of "(100.1)" sends a clinician to a determination that does
+    not exist — the pattern has to allow a period inside a determination number
+    while still stopping at the end of the sentence.
+    """
+    draft = _by_cpt(_parse("surgical-procedures"))["43644"]
+    clause = draft.clauses[0]
+    assert "CMS NCD" in clause.indication_text
+    assert "100.1" in clause.source_snippet
+
+
+def test_facet_ablation_is_absent_from_the_medicare_advantage_set():
+    """64635 negative control, and the reason it is not in PROCEDURE_TERMS.
+
+    The MA Pain Management policy governs adjacent denervation codes and never
+    names facet radiofrequency ablation. Audited 2026-08-15 across the full
+    extracted text of all 55 MA policies and all 259 commercial ones: the code
+    appears in none of them.
+    """
+    assert "64635" not in PROCEDURE_TERMS
+
+    entry = DOCUMENTS["pain-management-rehabilitation"]
+    assert "64635" not in entry["text"]
+    assert "64625" in entry["text"], "expected the adjacent denervation codes"
+
+    assert _by_cpt(_parse("pain-management-rehabilitation")) == {}
+
+
+def test_cpap_is_absent_and_stays_absent():
+    """E0601 appears in the MA set only as a coding note, never as coverage.
+
+    "Using the HCPCS codes for CPAP (E0601) ... for a ventilator ... is
+    incorrect coding" is a billing instruction. The document carrying it routes
+    CPAP coverage to DME MAC LCD L33800 and has no Applicable Codes section at
+    all, so there is nothing here to build a rule from.
+    """
+    assert "E0601" not in PROCEDURE_TERMS
 
 
 # --- provenance ------------------------------------------------------------

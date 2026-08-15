@@ -195,6 +195,16 @@ class ExtractRequest(BaseModel):
         "scoring is evaluated against that payer's synced rules instead of the "
         "national baseline.",
     )
+    plan_type: str | None = Field(
+        default=None,
+        description="Optional plan type ('commercial' | 'medicare_advantage' | "
+        "'medicaid' | 'exchange'). The same payer adjudicates the same CPT "
+        "differently by line of business — UnitedHealthcare states its own "
+        "criteria for a knee replacement under a commercial plan and routes the "
+        "Medicare Advantage version to a CMS coverage determination — so "
+        "omitting this scores against whichever rule the rules service returns "
+        "by default.",
+    )
     requested_cpt: str | None = Field(
         default=None,
         description="Explicit CPT code the clinician intends to request. Overrides "
@@ -212,7 +222,7 @@ class ExtractRequest(BaseModel):
             raise ValueError("note must contain non-whitespace text")
         return value
 
-    @field_validator("payer_slug")
+    @field_validator("payer_slug", "plan_type")
     @classmethod
     def _normalize_payer(cls, value: str | None) -> str | None:
         return value.strip().lower() if value else None
