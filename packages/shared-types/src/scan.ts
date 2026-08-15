@@ -92,6 +92,14 @@ export const coverageStatusSchema = z.enum([
   'adjudicated',
   'excluded',
   'indication_not_addressed',
+  /**
+   * The payer adjudicates this procedure against criteria it does not publish —
+   * UnitedHealthcare defers its surgical policies to InterQual. Must stay in
+   * step with `CoverageStatus` in services/scan/app/schemas.py: a value the
+   * service can emit and this enum does not list fails the whole parse, and the
+   * clinician sees "version mismatch" instead of a result.
+   */
+  'criteria_delegated',
   'no_criteria_available',
 ]);
 
