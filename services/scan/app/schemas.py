@@ -157,12 +157,36 @@ class ScoreDriver(BaseModel):
     )
 
 
+class ScoreGap(BaseModel):
+    """One documentation element the note is missing, and what it is worth.
+
+    `missing_elements` carries the same text as a flat list and is kept for
+    callers that only want the prose — the justification drafter is one. This
+    adds the driver it belongs to, which is what lets a caller say how much
+    closing it would move the score. The two cannot be paired by position:
+    functional impairment records a gap from a branch with no unmet driver, so
+    a positional join puts the wrong number against the wrong line.
+    """
+
+    text: str
+    #: The `ScoreDriver.key` this gap belongs to.
+    driver_key: str
+    #: Points closing it would add, or None where nothing prices it — a gap
+    #: recorded from a branch with no unmet driver, or one no documentation can
+    #: close.
+    potential_delta: float | None = None
+
+
 class ApprovalAssessment(BaseModel):
     score: float = Field(ge=0.0, le=1.0)
     band: ApprovalBand
     rationale: str
     drivers: list[ScoreDriver] = Field(default_factory=list)
     missing_elements: list[str] = Field(default_factory=list)
+    #: The same gaps, each tied to its driver and priced. Ordered by what
+    #: closing it is worth, so the first entry is the one to write if the
+    #: clinician only writes one.
+    gaps: list[ScoreGap] = Field(default_factory=list)
     basis: Literal["rule_engine", "payer_rule", "ml_model"] = "rule_engine"
     payer_slug: str | None = None
     coverage_status: CoverageStatus = CoverageStatus.NO_CRITERIA_AVAILABLE

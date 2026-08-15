@@ -51,3 +51,25 @@ def test_coverage_status_mirror_is_complete():
 
 def test_approval_band_mirror_is_complete():
     assert _zod_enum("approvalBandSchema") == {b.value for b in ApprovalBand}
+
+
+def test_the_assessment_mirror_has_every_field():
+    """A field the service emits and the mirror omits is silently dropped.
+
+    Unlike a bad enum value this does not fail the parse — Zod strips unknown
+    keys — so `gaps` would simply never arrive and the card would render empty
+    with nothing anywhere saying why.
+    """
+    from app.schemas import ApprovalAssessment
+
+    source = MIRROR.read_text(encoding="utf-8")
+    match = re.search(
+        r"export const approvalAssessmentSchema = z\.object\(\{(.*?)\n\}\)",
+        source,
+        re.DOTALL,
+    )
+    assert match, "approvalAssessmentSchema not found"
+    mirrored = set(re.findall(r"^\s{2}([a-z_]+):", match.group(1), re.MULTILINE))
+
+    missing = set(ApprovalAssessment.model_fields) - mirrored
+    assert not missing, f"not mirrored in shared-types: {sorted(missing)}"

@@ -335,7 +335,7 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
             </CardContent>
           </Card>
 
-          {approval.missing_elements.length > 0 ? (
+          {approval.gaps.length > 0 ? (
             <Card className="border-caution-border bg-caution-surface/40">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base text-caution-foreground">
@@ -344,21 +344,30 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Deliberately not annotated with what each gap is worth.
-                    `missing_elements` are strings and the arithmetic lives on
-                    the drivers, and the two lists do not correspond one to one —
-                    functional impairment appends a gap with no unmet driver
-                    beside it, so pairing them by position would put the wrong
-                    number against the wrong line. The Why-this-score tab shows
-                    each driver's worth exactly; joining them properly needs the
-                    engine to emit the key alongside the gap. */}
-                <ol className="space-y-2">
-                  {approval.missing_elements.map((element, index) => (
-                    <li key={element} className="flex gap-3 text-sm">
+                {/* The engine emits these already tied to their driver and
+                    ordered by what closing each is worth, so the first line is
+                    the one to write if the clinician only writes one. Pairing
+                    them here by position would put the wrong number on the
+                    wrong line — functional impairment records a gap from a
+                    branch with no unmet driver — which is why the key travels
+                    with the gap rather than being inferred. */}
+                <ol className="space-y-2.5">
+                  {approval.gaps.map((gap, index) => (
+                    <li key={gap.text} className="flex items-baseline gap-3 text-sm">
                       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-caution/15 text-[11px] font-semibold tabular-nums text-caution-foreground">
                         {index + 1}
                       </span>
-                      <span>{element}</span>
+                      <span className="flex-1">{gap.text}</span>
+                      {gap.potential_delta ? (
+                        <span
+                          className="shrink-0 text-xs font-semibold tabular-nums text-caution-foreground"
+                          title={`Documenting this adds ${Math.round(
+                            gap.potential_delta * 100,
+                          )} points to the documentation score`}
+                        >
+                          +{Math.round(gap.potential_delta * 100)}
+                        </span>
+                      ) : null}
                     </li>
                   ))}
                 </ol>

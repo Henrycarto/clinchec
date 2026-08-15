@@ -127,3 +127,57 @@ def test_the_score_is_not_described_as_a_probability(parser):
     assessment = _assess(parser, COMPLETE)
     assert "likelihood" not in assessment.rationale.lower()
     assert assessment.rationale.startswith("Documentation score")
+
+
+def test_gaps_carry_their_driver_and_are_ranked(parser):
+    """Each gap names the driver it belongs to, so the price is never inferred.
+
+    Ranked by worth, so the first entry is the one to write if the clinician
+    only writes one — the engine records gaps in evaluation order, which is a
+    different thing entirely.
+    """
+    assessment = _assess(parser, THIN)
+    assert assessment.gaps
+
+    priced = [g.potential_delta for g in assessment.gaps if g.potential_delta]
+    assert priced == sorted(priced, reverse=True), "gaps are not ranked by worth"
+
+    for gap in assessment.gaps:
+        assert gap.driver_key, gap.text
+        assert gap.driver_key in _CEILING or gap.potential_delta is None
+
+
+def test_a_bonus_driver_absent_is_priced_at_its_ceiling(parser):
+    """Functional impairment awards up to 5 and penalises nothing when absent.
+
+    No driver exists to carry a penalty, so an earlier version left the gap
+    unpriced — understating it as zero when the swing is exactly the ceiling.
+    """
+    assessment = _assess(parser, THIN)
+    impairment = next(
+        g for g in assessment.gaps if g.driver_key == "functional_impairment"
+    )
+    assert impairment.potential_delta == _CEILING["functional_impairment"]
+    assert not any(d.key == "functional_impairment" for d in assessment.drivers)
+
+
+def test_gaps_and_missing_elements_carry_the_same_text(parser):
+    """`missing_elements` is the flat projection, kept for the justification
+    drafter. Same content, so a caller reading either sees the same gaps."""
+    assessment = _assess(parser, THIN)
+    assert sorted(g.text for g in assessment.gaps) == sorted(assessment.missing_elements)
+
+
+def test_gaps_are_never_paired_by_position(parser):
+    """The join this replaced.
+
+    Functional impairment records a gap from a branch with no unmet driver, so
+    the nth gap and the nth unmet driver are different things. Asserted here so
+    nobody reintroduces the shortcut after seeing the two lists line up on a
+    note where they happen to.
+    """
+    assessment = _assess(parser, THIN)
+    unmet = [d for d in assessment.drivers if not d.satisfied]
+    by_position = [d.key for d in unmet]
+    by_key = [g.driver_key for g in assessment.gaps]
+    assert by_key != by_position[: len(by_key)]

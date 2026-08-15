@@ -109,12 +109,27 @@ export const coverageStatusSchema = z.enum([
   'no_criteria_available',
 ]);
 
+export const scoreGapSchema = z.object({
+  text: z.string(),
+  /** The `ScoreDriver.key` this gap belongs to. */
+  driver_key: z.string(),
+  /** Points closing it would add, or null where nothing prices it. */
+  potential_delta: z.number().nullish(),
+});
+
 export const approvalAssessmentSchema = z.object({
   score: z.number().min(0).max(1),
   band: approvalBandSchema,
   rationale: z.string(),
   drivers: z.array(scoreDriverSchema).default([]),
   missing_elements: z.array(z.string()).default([]),
+  /**
+   * The same gaps, each tied to the driver it belongs to and priced, ordered by
+   * what closing it is worth. Prefer this over `missing_elements`, which is the
+   * flat projection kept for callers that only want the prose — the two cannot
+   * be paired by position, and doing so puts the wrong number on the wrong line.
+   */
+  gaps: z.array(scoreGapSchema).default([]),
   basis: z.enum(['rule_engine', 'payer_rule', 'ml_model']).default('rule_engine'),
   payer_slug: z.string().nullish(),
   coverage_status: coverageStatusSchema.default('no_criteria_available'),
