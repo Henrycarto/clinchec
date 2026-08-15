@@ -16,6 +16,7 @@ from celery import shared_task
 
 from app.config import get_settings
 from app.db import (
+    count_absences,
     dispose_engine,
     get_checksum,
     get_rule,
@@ -25,7 +26,7 @@ from app.db import (
     touch_rule,
     upsert_rule,
 )
-from app.schemas import RuleDraft, SyncReport
+from app.schemas import CrawlResult, RuleDraft, SyncReport
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,17 @@ _MATERIAL_FIELDS = (
 _CLAUSE_FIELD = "clauses"
 
 
-async def apply_drafts(payer_slug: str, drafts: list[RuleDraft]) -> SyncReport:
-    """Persist a crawl's drafts, writing only what actually changed."""
+async def apply_drafts(
+    payer_slug: str,
+    drafts: list[RuleDraft],
+    crawl: CrawlResult | None = None,
+) -> SyncReport:
+    """Persist a crawl's drafts, writing only what actually changed.
+
+    `crawl` carries whether the run actually surveyed the payer. Without it,
+    absence is not counted at all — the safe default for callers that only mean
+    to write drafts, such as a manual re-sync.
+    """
     report = SyncReport(payer_slug=payer_slug)
 
     for draft in drafts:
@@ -90,7 +100,72 @@ async def apply_drafts(payer_slug: str, drafts: list[RuleDraft]) -> SyncReport:
             )
             report.changes.append({"cpt_code": draft.cpt_code, "fields": diff})
 
+    await _retire_absent(payer_slug, drafts, crawl, report)
     return report
+
+
+async def _retire_absent(
+    payer_slug: str,
+    drafts: list[RuleDraft],
+    crawl: CrawlResult | None,
+    report: SyncReport,
+) -> None:
+    """Withdraw rules whose source document has stopped being published.
+
+    The whole difficulty is telling that from a crawl that merely came back
+    short. A payer being down, discovery returning stale paths, the page cap
+    truncating the document list, an offline seed run — all produce fewer rules
+    and none of them says a policy was withdrawn. The August 2026 validation is
+    the case to keep in mind: UHC discovery returned four stale paths and parsed
+    nothing, which "absent means gone" would have read as UnitedHealthcare
+    withdrawing its entire rule set.
+
+    So absence is only counted when the crawl reports itself complete, and
+    retirement waits for several complete crawls in a row. Producing a rule at
+    any point resets the count and reverses a retirement.
+    """
+    settings = get_settings()
+    if crawl is None or not crawl.complete:
+        reason = (
+            "no crawl result supplied"
+            if crawl is None
+            else crawl.incomplete_reason or "crawl reported incomplete"
+        )
+        logger.info(
+            "%s: not counting absences (%s); stored rules are left alone",
+            payer_slug,
+            reason,
+        )
+        return
+
+    seen = [(d.cpt_code, d.plan_type.value) for d in drafts]
+    retired, counting = await count_absences(
+        payer_slug, seen, settings.rule_retire_after_missed_crawls
+    )
+
+    for cpt_code, plan_type in counting:
+        logger.info(
+            "%s/%s (%s): not produced by a complete crawl; counting toward "
+            "retirement after %d",
+            payer_slug,
+            cpt_code,
+            plan_type,
+            settings.rule_retire_after_missed_crawls,
+        )
+
+    for cpt_code, plan_type in retired:
+        # Warning, not info: this withdraws criteria from every practice using
+        # them, and it is the one outcome here that changes what Scan returns.
+        logger.warning(
+            "%s/%s (%s): retired — absent from %d consecutive complete crawls",
+            payer_slug,
+            cpt_code,
+            plan_type,
+            settings.rule_retire_after_missed_crawls,
+        )
+
+    report.retired = len(retired)
+    report.retiring = len(counting)
 
 
 def _diff(previous, draft: RuleDraft) -> dict:  # noqa: ANN001

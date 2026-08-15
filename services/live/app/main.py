@@ -200,6 +200,12 @@ async def list_payer_rules(
     payer_slug: str,
     request: Request,
     limit: int = Query(default=200, ge=1, le=1000),
+    include_retired: bool = Query(
+        default=False,
+        description="Include rules withdrawn because their source document "
+        "stopped being published. For inspection only — nothing that scores a "
+        "request should ask for a retired rule.",
+    ),
 ) -> Envelope[list[PayerRuleResult]]:
     if payer_slug.lower() not in REGISTERED_SLUGS:
         raise ApiError(
@@ -208,7 +214,7 @@ async def list_payer_rules(
             status_code=404,
             details={"registered": list(REGISTERED_SLUGS)},
         )
-    rules = await db.list_rules(payer_slug.lower(), limit)
+    rules = await db.list_rules(payer_slug.lower(), limit, include_retired)
     return ok(rules, request=request, count=len(rules))
 
 

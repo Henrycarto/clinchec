@@ -125,6 +125,7 @@ async def get_rule(
     query = _RULE_SELECT + """
         WHERE p.slug = :payer_slug
           AND r.cpt_code = :cpt_code
+          AND r.retired_at IS NULL
           AND (
                 CAST(:plan_type AS text) IS NULL
                 OR r.plan_type = :plan_type
@@ -150,23 +151,42 @@ async def get_rule(
     return rule
 
 
-async def list_rules(payer_slug: str, limit: int = 200) -> list[PayerRuleResult]:
+async def list_rules(
+    payer_slug: str,
+    limit: int = 200,
+    include_retired: bool = False,
+) -> list[PayerRuleResult]:
+    """A payer's rules, active ones only unless asked otherwise.
+
+    `include_retired` exists for operators, not for scoring. A retired rule is
+    withheld rather than deleted precisely so somebody can look at what was
+    dropped and why — but nothing that scores a request should ever ask for one.
+    """
     query = _RULE_SELECT + """
         WHERE p.slug = :payer_slug
+          AND (:include_retired OR r.retired_at IS NULL)
         ORDER BY r.cpt_code
         LIMIT :limit
     """
     async with session_scope() as session:
         result = await session.execute(
-            text(query), {"payer_slug": payer_slug, "limit": limit}
+            text(query),
+            {
+                "payer_slug": payer_slug,
+                "limit": limit,
+                "include_retired": include_retired,
+            },
         )
         rows = result.mappings().all()
     return [_to_rule_result(row) for row in rows]
 
 
 async def count_rules() -> int:
+    """Active rules. A retired one is not criteria we hold any more."""
     async with session_scope() as session:
-        result = await session.execute(text("SELECT COUNT(*) FROM payer_rules"))
+        result = await session.execute(
+            text("SELECT COUNT(*) FROM payer_rules WHERE retired_at IS NULL")
+        )
         return int(result.scalar_one())
 
 
@@ -176,7 +196,13 @@ async def list_payers() -> list[PayerSummary]:
         p.slug,
         p.display_name,
         p.portal_base_url,
-        COUNT(r.id)                              AS rule_count,
+        -- DISTINCT because this row is also joined to `payer_crawl_runs`, so
+        -- every rule appears once per crawl ever recorded. Without it the count
+        -- is rules × crawls: UHC read 42 against 14 real rules after three
+        -- runs, and would have kept climbing nightly.
+        COUNT(DISTINCT r.id) FILTER (WHERE r.retired_at IS NULL) AS rule_count,
+        COUNT(DISTINCT r.id) FILTER (WHERE r.retired_at IS NOT NULL)
+            AS retired_rule_count,
         MAX(c.finished_at)                       AS last_crawled_at,
         (ARRAY_AGG(c.status ORDER BY c.started_at DESC))[1] AS last_crawl_status
     FROM payers p
@@ -194,6 +220,7 @@ async def list_payers() -> list[PayerSummary]:
             display_name=row["display_name"],
             portal_base_url=row["portal_base_url"],
             rule_count=row["rule_count"] or 0,
+            retired_rule_count=row["retired_rule_count"] or 0,
             last_crawled_at=row["last_crawled_at"],
             last_crawl_status=row["last_crawl_status"],
         )
@@ -250,7 +277,11 @@ ON CONFLICT (payer_id, cpt_code, plan_type) DO UPDATE SET
     source_url                 = EXCLUDED.source_url,
     source_checksum            = EXCLUDED.source_checksum,
     effective_date             = EXCLUDED.effective_date,
-    last_verified_at           = now()
+    last_verified_at           = now(),
+    -- Producing a rule is proof its source is alive, so any retirement in
+    -- progress is cancelled and a completed one reversed.
+    missed_crawls              = 0,
+    retired_at                 = NULL
 RETURNING id, (xmax = 0) AS inserted
 """
 
@@ -275,9 +306,16 @@ async def touch_rule(payer_slug: str, cpt_code: str, plan_type: str) -> None:
 
     Freshness is a product feature — the UI shows how recently a rule was
     confirmed — so an unchanged crawl still has to move `last_verified_at`.
+
+    Seeing a rule also cancels any retirement in progress, and un-retires one
+    already retired. A payer republishing a withdrawn policy should bring its
+    rule back rather than leave a tombstone we then have to notice by hand.
     """
     query = """
-    UPDATE payer_rules r SET last_verified_at = now()
+    UPDATE payer_rules r
+       SET last_verified_at = now(),
+           missed_crawls = 0,
+           retired_at = NULL
     FROM payers p
     WHERE p.id = r.payer_id
       AND p.slug = :payer_slug AND r.cpt_code = :cpt_code AND r.plan_type = :plan_type
@@ -287,6 +325,81 @@ async def touch_rule(payer_slug: str, cpt_code: str, plan_type: str) -> None:
             text(query),
             {"payer_slug": payer_slug, "cpt_code": cpt_code, "plan_type": plan_type},
         )
+
+
+async def count_absences(
+    payer_slug: str,
+    seen: list[tuple[str, str]],
+    retire_after: int,
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Count this crawl's absences, and retire the ones that have run out.
+
+    `seen` is `(cpt_code, plan_type)` for every rule the crawl produced. Call
+    only after a complete crawl — a run that was capped, that failed a fetch, or
+    that served seeds has not surveyed the payer, and its silence is not
+    evidence.
+
+    Returns `(newly_retired, still_counting)`. Both are reported rather than
+    logged and dropped, because "three rules went quiet this week" is something
+    an operator should see before the third week, not after it.
+
+    Written as one statement per outcome rather than a read-modify-write loop:
+    a crawl running while somebody re-syncs by hand would otherwise stamp a
+    stale counter back over a fresh one.
+    """
+    params: dict = {"payer_slug": payer_slug, "retire_after": retire_after}
+    if seen:
+        # A VALUES list, so the "not produced this run" test happens in the
+        # database rather than by pulling every rule into Python.
+        pairs = ", ".join(
+            f"(:cpt_{i}, :plan_{i})" for i in range(len(seen))
+        )
+        for index, (cpt_code, plan_type) in enumerate(seen):
+            params[f"cpt_{index}"] = cpt_code
+            params[f"plan_{index}"] = plan_type
+        absent = f"""
+            AND (r.cpt_code, r.plan_type) NOT IN (
+                SELECT * FROM (VALUES {pairs}) AS s(cpt_code, plan_type)
+            )
+        """
+    else:
+        # A complete crawl that produced nothing at all. Possible — a payer can
+        # withdraw every policy we track — and every stored rule is absent.
+        absent = ""
+
+    bump = f"""
+    UPDATE payer_rules r
+       SET missed_crawls = r.missed_crawls + 1
+    FROM payers p
+    WHERE p.id = r.payer_id
+      AND p.slug = :payer_slug
+      AND r.retired_at IS NULL
+      {absent}
+    RETURNING r.cpt_code, r.plan_type, r.missed_crawls
+    """
+
+    retire = """
+    UPDATE payer_rules r
+       SET retired_at = now()
+    FROM payers p
+    WHERE p.id = r.payer_id
+      AND p.slug = :payer_slug
+      AND r.retired_at IS NULL
+      AND r.missed_crawls >= :retire_after
+    RETURNING r.cpt_code, r.plan_type
+    """
+
+    async with session_scope() as session:
+        bumped = (await session.execute(text(bump), params)).mappings().all()
+        retired = (await session.execute(text(retire), params)).mappings().all()
+
+    retired_pairs = {(row["cpt_code"], row["plan_type"]) for row in retired}
+    counting = [
+        (row["cpt_code"], row["plan_type"])
+        for row in bumped
+        if (row["cpt_code"], row["plan_type"]) not in retired_pairs
+    ]
+    return sorted(retired_pairs), sorted(counting)
 
 
 async def upsert_rule(draft: RuleDraft, checksum: str) -> bool:

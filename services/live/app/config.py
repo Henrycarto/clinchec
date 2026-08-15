@@ -32,6 +32,18 @@ class Settings(BaseSettings):
     payer_max_pages_per_run: int = 40
     respect_robots_txt: bool = True
 
+    # How many consecutive COMPLETE crawls a rule may be absent from before it
+    # is retired and stops being served. Only complete crawls count — a capped,
+    # failed, or offline-seed run says nothing about whether a policy still
+    # exists — so with the nightly schedule this is roughly three days of a
+    # policy being genuinely gone.
+    #
+    # The trade is asymmetric. Retiring too eagerly withdraws criteria a
+    # practice is relying on; retiring too slowly leaves a rule citing a dead
+    # URL, which is what this exists to fix and is the milder failure. Three
+    # sits on the cautious side of that on purpose.
+    rule_retire_after_missed_crawls: int = 3
+
     aetna_portal_base_url: str = "https://www.aetna.com"
     bcbs_portal_base_url: str = "https://www.bcbs.com"
     uhc_portal_base_url: str = "https://www.uhcprovider.com"

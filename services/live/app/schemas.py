@@ -175,7 +175,12 @@ class PayerSummary(BaseModel):
     slug: str
     display_name: str
     portal_base_url: str | None = None
+    #: Active rules. Retired ones are not criteria we hold any more.
     rule_count: int = 0
+    #: Rules withdrawn because their source document stopped being published.
+    #: Surfaced rather than hidden: a payer retiring half its policies is worth
+    #: seeing, and so is a bug in the crawler that looks like one.
+    retired_rule_count: int = 0
     last_crawled_at: datetime | None = None
     last_crawl_status: CrawlStatus | None = None
 
@@ -191,6 +196,20 @@ class CrawlResult(BaseModel):
     finished_at: datetime | None = None
     duration_seconds: float | None = None
 
+    #: Whether this run actually looked at everything the payer publishes.
+    #:
+    #: Only a complete run may conclude anything from a rule's *absence*. A run
+    #: that was capped by `payer_max_pages_per_run`, that failed to fetch a
+    #: document, or that served offline seeds did not survey the payer — and
+    #: treating its silence as evidence would retire rules that are alive.
+    #:
+    #: Defaults to False so a code path that forgets to set it withholds the
+    #: conclusion rather than asserting one.
+    complete: bool = False
+    #: Why not, when `complete` is False. Retirement never happening is a
+    #: symptom worth being able to diagnose without a debugger.
+    incomplete_reason: str | None = None
+
 
 class RuleChange(BaseModel):
     """One field-level difference between a stored rule and a fresh draft."""
@@ -205,6 +224,12 @@ class SyncReport(BaseModel):
     created: int = 0
     updated: int = 0
     unchanged: int = 0
+    #: Rules withdrawn this run because their source stopped being published.
+    retired: int = 0
+    #: Rules absent from this run and counting toward retirement. Reported
+    #: separately so "three rules went quiet this week" is visible before the
+    #: week they disappear, not after.
+    retiring: int = 0
     changes: list[dict] = Field(default_factory=list)
 
 
