@@ -199,7 +199,11 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
 
         {/* --- Extracted ------------------------------------------------- */}
         <TabsContent value="extracted" className="space-y-5">
-          <div className="grid gap-5 lg:grid-cols-2">
+          {/* `items-start` so a short card does not stretch to match a tall
+              neighbour. Patient & presentation has three rows and Suggested
+              codes has as many as the note yields, and stretching left an
+              empty half-card that read as content still loading. */}
+          <div className="grid items-start gap-5 lg:grid-cols-2">
             <SummaryCard result={result} />
             <CodesCard
               diagnoses={extraction.diagnoses}

@@ -200,3 +200,41 @@ def test_unknown_polarity_from_live_fails_safe():
     assert _polarity("delegated") == "delegated"
     assert _polarity(None) == "covered"
     assert _polarity("conditionally_covered_pending_review") == "delegated"
+
+
+def test_a_green_rationale_names_evidence_rather_than_inventorying_it(scan):
+    """A well-documented note satisfies eight drivers.
+
+    Naming all eight produced a 25-word comma-list the clinician cannot scan,
+    restating what the score breakdown already shows properly with each
+    driver's contribution beside it. The sentence names the strongest few and
+    counts the rest.
+    """
+    from app.models.scoring import _named
+    from app.schemas import ScoreDriver
+
+    def driver(label: str, delta: float) -> ScoreDriver:
+        return ScoreDriver(
+            key=label, label=label, delta=delta, detail="", satisfied=True
+        )
+
+    eight = [driver(f"driver {i}", 0.1 * i) for i in range(8)]
+    named = _named(sorted(eight, key=lambda d: d.delta, reverse=True))
+
+    assert named.count(",") <= 2, named
+    assert "and 5 more" in named
+    # Strongest first, so the concrete part of the sentence is the load-bearing
+    # evidence rather than whichever driver happens to be defined first.
+    assert named.startswith("driver 7")
+
+
+def test_a_short_driver_list_is_not_padded_with_a_count():
+    from app.models.scoring import _named
+    from app.schemas import ScoreDriver
+
+    two = [
+        ScoreDriver(key=n, label=n, delta=0.1, detail="", satisfied=True)
+        for n in ("symptom duration", "prior imaging")
+    ]
+    assert _named(two) == "symptom duration, prior imaging"
+    assert _named([]) == ""
