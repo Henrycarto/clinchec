@@ -32,6 +32,23 @@ import { Textarea } from '@/components/ui/textarea';
 const MIN_CHARS = 20;
 const SOFT_MAX_CHARS = 30_000;
 
+/**
+ * Lines of business, because the same payer adjudicates the same CPT
+ * differently across them. UnitedHealthcare states its own criteria for a total
+ * knee replacement under a commercial plan and routes the Medicare Advantage
+ * version to a CMS coverage determination — genuinely different answers.
+ *
+ * Without this the rules service returns whichever record it holds by default,
+ * which is a recency tiebreak: a knee scan silently landed on Medicare
+ * Advantage criteria because that rule happened to be crawled last.
+ */
+const PLAN_TYPES = [
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'medicare_advantage', label: 'Medicare Advantage' },
+  { value: 'medicaid', label: 'Medicaid' },
+  { value: 'exchange', label: 'Exchange' },
+] as const;
+
 const PAYERS = [
   { slug: '', label: 'National baseline' },
   { slug: 'aetna', label: 'Aetna' },
@@ -69,6 +86,7 @@ export function SoapNoteInput({
 }: SoapNoteInputProps) {
   const [note, setNote] = React.useState(initialNote);
   const [payerSlug, setPayerSlug] = React.useState<string>(initialPayerSlug);
+  const [planType, setPlanType] = React.useState<string>('commercial');
   const [draftJustification, setDraftJustification] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [error, setError] = React.useState<{ title: string; message: string } | null>(null);
@@ -98,6 +116,10 @@ export function SoapNoteInput({
         {
           note,
           payer_slug: payerSlug || null,
+          // Only meaningful alongside a payer; the national baseline has no
+          // lines of business, and sending one would imply a distinction the
+          // rule engine does not make.
+          plan_type: payerSlug ? planType : null,
           draft_justification: draftJustification,
         },
         { signal: controller.signal },
@@ -118,7 +140,7 @@ export function SoapNoteInput({
     } finally {
       if (!controller.signal.aborted) setIsScanning(false);
     }
-  }, [note, payerSlug, draftJustification, onResult]);
+  }, [note, payerSlug, planType, draftJustification, onResult]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -246,6 +268,29 @@ export function SoapNoteInput({
                 ))}
               </select>
             </div>
+
+            {payerSlug ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-type" className="text-xs text-muted-foreground">
+                  Plan
+                </Label>
+                <select
+                  id="plan-type"
+                  value={planType}
+                  onChange={(event) => setPlanType(event.target.value)}
+                  className={cn(
+                    'h-9 rounded-md border border-input bg-background px-3 text-sm',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  )}
+                >
+                  {PLAN_TYPES.map((plan) => (
+                    <option key={plan.value} value={plan.value}>
+                      {plan.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
 
             <div className="flex items-center gap-2 pb-2">
               <Checkbox

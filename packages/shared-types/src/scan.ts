@@ -183,6 +183,13 @@ export const scanResultSchema = z.object({
 export const extractRequestSchema = z.object({
   note: z.string().min(1, 'Paste or type a SOAP note first.'),
   payer_slug: z.string().nullish(),
+  /**
+   * The line of business, which changes the answer: UnitedHealthcare states its
+   * own criteria for a knee replacement commercially and routes the Medicare
+   * Advantage version to a CMS determination. Omitting it leaves the rules
+   * service to pick by recency.
+   */
+  plan_type: z.string().nullish(),
   requested_cpt: z.string().nullish(),
   draft_justification: z.boolean().default(false),
 });
