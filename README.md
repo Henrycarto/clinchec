@@ -6,7 +6,7 @@
 
 AI-powered prior authorization pre-screening that lives inside the physician's
 EHR workflow. It reads the SOAP note the clinician already wrote, predicts
-approval likelihood against the payer's *current* criteria, and auto-populates
+how completely it documents the payer's *current* criteria, and auto-populates
 the right form in one click.
 
 </div>
@@ -42,7 +42,10 @@ Paste a SOAP note. In about 40 milliseconds you get:
   duration, diagnosis and procedure codes, conservative care trialled, prior
   imaging, functional impairment, red flags. Each with a confidence indicator,
   and each traceable back to the exact span of the note it came from.
-- **An approval likelihood** — a single number, banded green (≥ 80%), amber
+- **A documentation score** — how completely the note documents what the
+  payer's criteria ask for. Not a probability of approval: Clinchec has never
+  observed a submitted request's outcome, so it has nothing to calibrate one
+  against. Banded green (≥ 80%), amber
   (50–79%) or red (< 50%), scored against that payer's current published
   criteria.
 - **The reason for that number** — every point decomposes into a named,

@@ -63,7 +63,7 @@ export function ApprovalScoreBadge({
       )}
       // Screen readers get the meaning, not just the number.
       role="status"
-      aria-label={`Approval likelihood ${percent}. ${presentation.label}.`}
+      aria-label={`Documentation score ${percent}. ${presentation.label}.`}
     >
       <Icon className={sizes.icon} aria-hidden="true" />
       <span className={cn('font-semibold tabular-nums', sizes.score)}>{percent}</span>

@@ -15,8 +15,9 @@ export const metadata: Metadata = {
     template: '%s · Clinchec',
   },
   description:
-    'Reads unstructured SOAP notes, predicts insurance approval likelihood, and ' +
-    'auto-populates prior authorization forms inside the EHR workflow.',
+    'Reads unstructured SOAP notes, scores how completely they document the ' +
+    'payer’s current criteria, and auto-populates prior authorization forms ' +
+    'inside the EHR workflow.',
   // This app renders PHI. Keep it out of every index.
   robots: { index: false, follow: false, nocache: true },
   applicationName: 'Clinchec',

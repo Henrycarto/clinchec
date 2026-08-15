@@ -26,21 +26,30 @@ export interface BandPresentation {
   description: string;
 }
 
+/**
+ * Band labels describe the note, not the payer's decision.
+ *
+ * "Likely approved" and "Likely denied" were predictions about an insurer's
+ * behaviour, and Clinchec has never seen a submitted request's outcome — there
+ * is nothing to calibrate such a claim against. What the score does measure is
+ * how completely the note documents what the criteria ask for, which is both
+ * defensible and the thing the clinician can act on before the visit ends.
+ */
 export const BAND_PRESENTATION: Record<ApprovalBand, BandPresentation> = {
   green: {
-    label: 'Likely approved',
-    short: 'Likely',
+    label: 'Well documented',
+    short: 'Complete',
     icon: 'check-circle',
     text: 'text-approve-foreground',
     surface: 'bg-approve-surface',
     border: 'border-approve-border',
     ring: 'ring-approve/30',
     bar: 'bg-approve',
-    description: 'Documentation meets the criteria this payer applies. Submit as-is.',
+    description: 'The note documents what these criteria ask for. Submit as-is.',
   },
   amber: {
-    label: 'Needs attention',
-    short: 'Review',
+    label: 'Gaps to close',
+    short: 'Gaps',
     icon: 'alert-triangle',
     text: 'text-caution-foreground',
     surface: 'bg-caution-surface',
@@ -50,8 +59,8 @@ export const BAND_PRESENTATION: Record<ApprovalBand, BandPresentation> = {
     description: 'Defensible but incomplete. Strengthen the gaps before submitting.',
   },
   red: {
-    label: 'Likely denied',
-    short: 'At risk',
+    label: 'Not ready to submit',
+    short: 'Incomplete',
     icon: 'x-circle',
     text: 'text-deny-foreground',
     surface: 'bg-deny-surface',
