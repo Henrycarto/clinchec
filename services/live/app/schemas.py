@@ -27,6 +27,15 @@ class CrawlStatus(StrEnum):
 class Polarity(StrEnum):
     COVERED = "covered"
     EXCLUDED = "excluded"
+    #: The payer adjudicates the procedure but does not publish the criteria.
+    #: UnitedHealthcare's Surgery of the Knee policy is the canonical case: it
+    #: says the surgery "is proven and medically necessary in certain
+    #: circumstances" and then defers to InterQual® CP: Procedures, which is
+    #: licensed content we do not have. Recording that as a coverage clause
+    #: would attach the deferral sentence to the CPT as if it were criteria and
+    #: score requests against it. It is not criteria, so it is its own polarity:
+    #: shown to the clinician, never scored.
+    DELEGATED = "delegated"
 
 
 class RuleClause(BaseModel):
