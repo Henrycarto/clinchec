@@ -73,3 +73,24 @@ def test_the_assessment_mirror_has_every_field():
 
     missing = set(ApprovalAssessment.model_fields) - mirrored
     assert not missing, f"not mirrored in shared-types: {sorted(missing)}"
+
+
+def test_the_request_mirror_has_every_field():
+    """The same drift, on the way in.
+
+    A request field the mirror omits cannot be expressed by the client at all —
+    `plan_type` shipped on the service and in the router while the web app had
+    no way to send it, so every scan was scored against whichever line of
+    business the rules service happened to return.
+    """
+    from app.schemas import ExtractRequest
+
+    source = MIRROR.read_text(encoding="utf-8")
+    match = re.search(
+        r"export const extractRequestSchema = z\.object\(\{(.*?)\n\}\)", source, re.DOTALL
+    )
+    assert match, "extractRequestSchema not found"
+    mirrored = set(re.findall(r"^\s{2}([a-z_]+):", match.group(1), re.MULTILINE))
+
+    missing = set(ExtractRequest.model_fields) - mirrored
+    assert not missing, f"not mirrored in shared-types: {sorted(missing)}"
