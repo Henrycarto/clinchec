@@ -60,10 +60,125 @@ jobs:
             ${{ env.ECR_REGISTRY }}/clinchec-${{ matrix.service }}:${{ steps.meta.outputs.tag }}
             ${{ env.ECR_REGISTRY }}/clinchec-${{ matrix.service }}:latest
 
+  # Migrations run to completion before any service is updated, and a failure
+  # here stops the deploy. The alternative — migrating inside each service on
+  # boot — turns a bad migration into every task failing its health check, the
+  # circuit breaker rolling back, and a schema that may be half applied.
+  #
+  # Because this runs *ahead* of the new images, every migration must be
+  # backward compatible with the code currently serving traffic: add columns and
+  # tables, never drop or rename them in the same release. A destructive change
+  # is two deploys — stop using it, then remove it.
+  migrate:
+    name: Migrate database
+    runs-on: ubuntu-latest
+    needs: push-images
+    environment: ${{ inputs.environment || 'staging' }}
+    env:
+      CLUSTER: clinchec-${{ inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The migration runs on the image being deployed, not on `latest`. A
+      # deploy that migrated with one build and then served with another would
+      # apply a schema nobody is about to run against.
+      - name: Render task definition
+        id: taskdef
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infra/ecs/taskdef-migrate.json
+          container-name: clinchec-migrate
+          image: ${{ env.ECR_REGISTRY }}/clinchec-live:${{ needs.push-images.outputs.image_tag }}
+
+      - name: Register task definition
+        id: register
+        run: |
+          arn=$(aws ecs register-task-definition \
+            --cli-input-json "file://${{ steps.taskdef.outputs.task-definition }}" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+          echo "Registered $arn"
+
+      # Borrowed from the Live service rather than configured separately. Live
+      # can reach the database by definition, so its subnets and security group
+      # are exactly the ones the migration needs — and they cannot drift out of
+      # sync with a copy kept in workflow variables.
+      - name: Resolve network configuration
+        id: net
+        run: |
+          set -euo pipefail
+          vpc='services[0].networkConfiguration.awsvpcConfiguration'
+          # JMESPath does the joining, so this step needs no jq.
+          subnets=$(aws ecs describe-services --cluster "$CLUSTER" --services clinchec-live \
+            --query "join(',', $vpc.subnets)" --output text)
+          groups=$(aws ecs describe-services --cluster "$CLUSTER" --services clinchec-live \
+            --query "join(',', $vpc.securityGroups)" --output text)
+          if [ -z "$subnets" ] || [ "$subnets" = "None" ]; then
+            echo "::error::Could not read the Live service's network configuration."
+            exit 1
+          fi
+          echo "subnets=$subnets  groups=$groups"
+          echo "subnets=$subnets" >> "$GITHUB_OUTPUT"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+
+      - name: Run migrations
+        id: run
+        run: |
+          set -euo pipefail
+          task_arn=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "${{ steps.register.outputs.arn }}" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ steps.net.outputs.subnets }}],securityGroups=[${{ steps.net.outputs.groups }}],assignPublicIp=DISABLED}" \
+            --started-by "gha-${GITHUB_RUN_ID}" \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [ -z "$task_arn" ] || [ "$task_arn" = "None" ]; then
+            echo "::error::run-task returned no task; check the failures array above."
+            exit 1
+          fi
+          echo "Started $task_arn"
+          echo "task_arn=$task_arn" >> "$GITHUB_OUTPUT"
+
+          # `run-task` succeeds when the task is *scheduled*. Whether the
+          # migration worked is the container's exit code, and nothing surfaces
+          # that unless it is read explicitly.
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task_arn"
+
+          exit_code=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task_arn" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          reason=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task_arn" \
+            --query 'tasks[0].stoppedReason' --output text)
+          echo "exit code: $exit_code   stopped reason: $reason"
+
+          if [ "$exit_code" != "0" ]; then
+            echo "::error::Migration task exited $exit_code ($reason). Services were not updated."
+            exit 1
+          fi
+
+      # The runner's own log is the diagnosis for a failed migration, so it is
+      # pulled into the workflow output rather than left for somebody to find.
+      - name: Migration log
+        if: always() && steps.run.outputs.task_arn != ''
+        run: |
+          task_id="${{ steps.run.outputs.task_arn }}"
+          task_id="${task_id##*/}"
+          aws logs get-log-events \
+            --log-group-name /ecs/clinchec-migrate \
+            --log-stream-name "ecs/clinchec-migrate/$task_id" \
+            --query 'events[].message' --output text 2>/dev/null || \
+            echo "(log stream not available yet)"
+
   deploy-ecs:
     name: Roll out to ECS — ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: push-images
+    needs: [push-images, migrate]
     environment: ${{ inputs.environment || 'staging' }}
     strategy:
       max-parallel: 1
