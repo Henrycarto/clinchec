@@ -20,7 +20,7 @@ from app.schemas import PlanType, PolicyDocument
 
 try:  # pragma: no cover - depends on whether the private core is mounted
     import app.payers as payers_pkg
-    from app.payers.uhc import PROCEDURE_TERMS, UhcAdapter
+    from app.payers.uhc import PROCEDURE_TERMS, UhcAdapter, short_title
 except ImportError:  # pragma: no cover
     pytest.skip("clinchec-core-live not mounted", allow_module_level=True)
 
@@ -49,20 +49,46 @@ class _Settings:
         return "https://www.uhcprovider.com"
 
 
-def _parse(name: str):
-    adapter = UhcAdapter(_Settings())
+def _document(name: str) -> PolicyDocument:
     entry = DOCUMENTS[name]
-    document = PolicyDocument(
+    return PolicyDocument(
         payer_slug="uhc",
         url=entry["url"],
-        title=name,
+        title=entry.get("title", name),
         plan_type=(
             PlanType.MEDICARE_ADVANTAGE
             if entry.get("plan_type") == "medicare_advantage"
             else PlanType.COMMERCIAL
         ),
     )
-    return adapter.parse(document, entry["text"])
+
+
+def _parse(name: str):
+    adapter = UhcAdapter(_Settings())
+    return adapter.parse(_document(name), DOCUMENTS[name]["text"])
+
+
+def _parse_chain(*names: str):
+    """Parse several documents through one adapter, in order.
+
+    Cross-reference resolution is stateful within a crawl: a Medicare Advantage
+    policy names a commercial policy, and the adapter can only follow that
+    pointer if the commercial policy has already been parsed. `discover` sorts
+    commercial documents first for exactly this reason, and a test that parses
+    each document with a fresh adapter would pass while the feature did nothing.
+
+    Returns the drafts from the *last* document.
+    """
+    adapter = UhcAdapter(_Settings())
+    adapter._commercial_titles = {
+        short_title(entry["title"])
+        for entry in DOCUMENTS.values()
+        if entry.get("plan_type") != "medicare_advantage" and entry.get("title")
+    }
+    drafts = []
+    for name in names:
+        drafts = adapter.parse(_document(name), DOCUMENTS[name]["text"])
+    return drafts
 
 
 def _by_cpt(drafts) -> dict:
@@ -253,6 +279,99 @@ def test_cpap_is_absent_and_stays_absent():
     all, so there is nothing here to build a rule from.
     """
     assert "E0601" not in PROCEDURE_TERMS
+
+
+# --- following the commercial pointer --------------------------------------
+
+
+def test_the_commercial_pointer_is_followed():
+    """MA routing frequently ends at a commercial policy the adapter holds.
+
+    "refer to the UnitedHealthcare Commercial Medical Policy titled Bariatric
+    Surgery" is a resolvable reference, and following it turns a record that
+    said only "governed by CMS and a commercial policy" into one carrying the
+    payer's actual requirements — BMI thresholds, comorbidities, the lot.
+    """
+    draft = _by_cpt(_parse_chain("bariatric-surgery", "surgical-procedures"))["43644"]
+
+    assert "Bariatric Surgery" in draft.clauses[0].indication_text
+    # The referenced criteria, not just the reference.
+    assert "UnitedHealthcare commercial policy — Bariatric Surgery" in draft.criteria_text
+    assert "Body Mass Index" in draft.criteria_text
+
+
+def test_a_conditional_pointer_is_quoted_but_never_scored():
+    """The commercial policy binds only where CMS has not spoken.
+
+    UHC writes it plainly: "For coverage guidelines for states/territories with
+    no LCDs/LCAs, refer to the ... Commercial Medical Policy". Which members
+    that covers depends on their state, and a note does not say. Attaching the
+    commercial criteria as scoring clauses would apply them to everyone,
+    including members whose LCD says something else — so they are carried as
+    reference text and the rule keeps no evidence requirements of its own.
+    """
+    draft = _by_cpt(_parse_chain("bariatric-surgery", "surgical-procedures"))["43644"]
+
+    assert [c.polarity.value for c in draft.clauses] == ["delegated"]
+    assert draft.required_duration_weeks is None
+    assert draft.required_conservative_care == []
+    assert draft.required_imaging == []
+
+    text = draft.clauses[0].indication_text
+    assert "depends on the member's state" in text
+    assert "not scored" in text
+    # The sentence is read both on the rule and, alone, as a scan advisory.
+    assert "below" not in text
+
+
+def test_an_unconditional_pointer_carries_the_criteria_over():
+    """Where UHC says no LCD exists, the commercial policy simply is the rule.
+
+    The FAI block in the same document is the real example: "LCDs/LCAs do not
+    exist. For coverage guidelines, refer to the ... Policy titled Surgery of
+    the Hip." Nothing is conditional there, so treating it as conditional would
+    withhold criteria that genuinely govern.
+    """
+    from app.payers.adjudication import find_routing
+    from app.utils.pdf import section
+
+    rationale = section(
+        DOCUMENTS["joint-procedures"]["text"],
+        "Coverage Rationale",
+        ["Applicable Codes", "Definitions", "Clinical Evidence"],
+    )
+    routing = find_routing(
+        rationale,
+        [r"femoroacetabular impingement", r"\bFAI\b"],
+        {"Surgery of the Hip"},
+    )
+    assert routing is not None
+    assert routing.topic.startswith("Femoroacetabular")
+    assert routing.commercial_policy == "Surgery of the Hip"
+    assert routing.conditional is False
+
+
+def test_conditionality_defaults_to_the_safe_answer():
+    """A block whose conditionality cannot be read must not be treated as
+    governing everywhere. Under-applying criteria loses a requirement; over-
+    applying them scores a member against rules their state replaced."""
+    from app.payers.adjudication import Routing
+
+    assert Routing(topic="x", destinations=()).conditional is True
+
+
+def test_an_unresolvable_pointer_degrades_to_the_route_alone():
+    """A pointer to a policy this crawl does not hold resolves to nothing.
+
+    Failing closed matters more than it looks: the title runs into the sentence
+    after it, so a parser that guessed where the name ended would cite a policy
+    that does not exist.
+    """
+    drafts = _by_cpt(_parse("joint-procedures"))  # no commercial pass first
+    clause = drafts["27447"].clauses[0]
+    assert clause.polarity.value == "delegated"
+    assert "commercial policy" in clause.indication_text.lower()
+    assert "UnitedHealthcare commercial policy —" not in drafts["27447"].criteria_text
 
 
 # --- provenance ------------------------------------------------------------
