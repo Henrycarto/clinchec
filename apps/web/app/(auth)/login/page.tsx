@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Activity, AlertCircle, FlaskConical, Hospital, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { AlertCircle, FlaskConical, Hospital, ShieldCheck, TriangleAlert } from 'lucide-react';
 
 import { isDevBypassEnabled } from '@/lib/dev-auth';
 import { getSession } from '@/lib/session';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Sign in' };
 export const dynamic = 'force-dynamic';
@@ -33,20 +32,19 @@ export default async function LoginPage({
   const devBypassAvailable = isDevBypassEnabled();
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-6">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Activity className="size-6" aria-hidden="true" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Clinchec</h1>
-            <p className="text-sm text-muted-foreground">
-              Prior authorization pre-screening
-            </p>
-          </div>
-        </div>
+    // Same frame as the signed-out page: a hairline-bounded column, left
+    // aligned, no page wash and no logo tile. A clinician reaching this screen
+    // has lost their session between patients and wants the button, not a
+    // brand moment.
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6">
+      <header className="flex items-baseline justify-between border-b py-6">
+        <h1 className="text-sm font-semibold tracking-tight">Clinchec</h1>
+        <span className="text-xs text-muted-foreground">
+          Prior authorization pre-screening
+        </span>
+      </header>
 
+      <div className="flex flex-1 flex-col justify-center gap-6 py-12">
         {searchParams.error ? (
           <Alert variant="destructive">
             <AlertCircle aria-hidden="true" />
@@ -57,16 +55,16 @@ export default async function LoginPage({
           </Alert>
         ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Sign in with your EHR</CardTitle>
-            <CardDescription>
+        <section className="space-y-4">
+          <div className="space-y-1.5">
+            <h2 className="text-base font-medium">Sign in with your EHR</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Clinchec uses SMART on FHIR. You authenticate with your hospital
               credentials — Clinchec never sees or stores your password.
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
 
-          <CardContent className="space-y-4">
+          <div className="space-y-4">
             {canLaunch ? (
               <Button asChild size="lg" className="w-full">
                 <a href={`/api/auth/launch?iss=${encodeURIComponent(issuer!)}`}>
@@ -128,10 +126,10 @@ export default async function LoginPage({
                 </form>
               </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="border-t pt-4 text-xs text-muted-foreground">
           Launching from inside your EHR?{' '}
           <Link href="/" className="underline underline-offset-2">
             Learn how it works

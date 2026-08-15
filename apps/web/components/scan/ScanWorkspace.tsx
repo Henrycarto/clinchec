@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowRight, ScanLine } from 'lucide-react';
 
 import type { ScanResult } from '@clinchec/shared-types';
 
@@ -65,32 +64,36 @@ export function ScanWorkspace({
   );
 }
 
+/**
+ * The right-hand pane before anything has been scanned.
+ *
+ * Not a centred icon in a circle. This pane is read by a clinician mid-consult
+ * with the patient watching, and it has one job: say what will appear here and
+ * how to make it appear. Left-aligned in the position the results will occupy,
+ * so the eye does not have to move when they arrive.
+ */
 function EmptyResultState() {
   return (
     <Card className="h-full border-dashed">
-      <CardContent className="flex h-full min-h-[420px] flex-col items-center justify-center gap-4 text-center">
-        <span className="flex size-12 items-center justify-center rounded-full bg-muted">
-          <ScanLine className="size-5 text-muted-foreground" aria-hidden="true" />
-        </span>
-        <div className="max-w-sm space-y-1.5">
-          <p className="font-medium">Nothing scanned yet</p>
-          <p className="text-sm text-muted-foreground">
-            Paste a SOAP note and press Scan. Clinchec extracts the diagnosis and
-            procedure codes, checks them against the payer&rsquo;s current criteria, and
-            estimates the approval likelihood before you submit.
+      <CardContent className="flex h-full min-h-[420px] flex-col justify-center gap-5 py-10">
+        <div className="max-w-md space-y-2">
+          <p className="text-sm font-medium">Results appear here</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Extracted diagnosis and procedure codes, the payer&rsquo;s current
+            criteria for that procedure, and what the note is missing against
+            them.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
+          Paste a note and press{' '}
           <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
             Ctrl
           </kbd>
-          <span>+</span>
+          {' + '}
           <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
             Enter
           </kbd>
-          <span>to scan</span>
-          <ArrowRight className="size-3" aria-hidden="true" />
-        </div>
+        </p>
       </CardContent>
     </Card>
   );
