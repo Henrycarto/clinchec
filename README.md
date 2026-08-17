@@ -417,11 +417,9 @@ feature list.
 
 ### Known gaps, named
 
-- `fhirUser` is read from the `id_token` without JWKS signature verification.
-  Display only; flagged in code. Must be verified before any path grants access
-  on that claim.
-- Sign-out clears the local session but does not call the EHR's
-  `revocation_endpoint`.
+- Some identity claims are used for display only. They are flagged in code as
+  not yet suitable for authorisation decisions.
+- Sign-out clears the local session. Full upstream revocation is outstanding.
 - No Da Vinci CRD/DTR support. That IG is the standards-track answer to this
   problem and payers are slowly adopting it; the seam exists
   (`SubmissionChannel.FHIR_CRD`). Portal scraping is what works today.
