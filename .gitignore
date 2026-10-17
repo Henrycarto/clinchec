@@ -1,7 +1,3 @@
-# --- Claude / AI tooling ---
-CLAUDE.md
-.claude/
-*.claude
 
 # --- Environment & secrets ---
 .env
