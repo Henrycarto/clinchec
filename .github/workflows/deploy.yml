@@ -22,7 +22,7 @@ env:
 
 jobs:
   push-images:
-    name: Build & push — ${{ matrix.service }}
+    name: Build & push - ${{ matrix.service }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'staging' }}
     strategy:
@@ -61,14 +61,14 @@ jobs:
             ${{ env.ECR_REGISTRY }}/clinchec-${{ matrix.service }}:latest
 
   # Migrations run to completion before any service is updated, and a failure
-  # here stops the deploy. The alternative — migrating inside each service on
-  # boot — turns a bad migration into every task failing its health check, the
+  # here stops the deploy. The alternative - migrating inside each service on
+  # boot - turns a bad migration into every task failing its health check, the
   # circuit breaker rolling back, and a schema that may be half applied.
   #
   # Because this runs *ahead* of the new images, every migration must be
   # backward compatible with the code currently serving traffic: add columns and
   # tables, never drop or rename them in the same release. A destructive change
-  # is two deploys — stop using it, then remove it.
+  # is two deploys - stop using it, then remove it.
   migrate:
     name: Migrate database
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
 
       # Borrowed from the Live service rather than configured separately. Live
       # can reach the database by definition, so its subnets and security group
-      # are exactly the ones the migration needs — and they cannot drift out of
+      # are exactly the ones the migration needs - and they cannot drift out of
       # sync with a copy kept in workflow variables.
       - name: Resolve network configuration
         id: net
@@ -176,7 +176,7 @@ jobs:
             echo "(log stream not available yet)"
 
   deploy-ecs:
-    name: Roll out to ECS — ${{ matrix.service }}
+    name: Roll out to ECS - ${{ matrix.service }}
     runs-on: ubuntu-latest
     needs: [push-images, migrate]
     environment: ${{ inputs.environment || 'staging' }}
@@ -211,7 +211,7 @@ jobs:
 
   # Waits for the APIs, not just for the migration. The web app is a client of
   # Scan, Live and Forms, so shipping it first means a UI calling endpoints that
-  # do not exist yet — and shipping it after a failed migration means a UI whose
+  # do not exist yet - and shipping it after a failed migration means a UI whose
   # backends were deliberately left un-updated. Neither is a state worth being
   # able to reach.
   deploy-web:

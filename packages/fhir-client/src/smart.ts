@@ -1,5 +1,5 @@
 /**
- * SMART on FHIR authorization — real OAuth 2.0, Epic and Cerner compatible.
+ * SMART on FHIR authorization - real OAuth 2.0, Epic and Cerner compatible.
  *
  * Implements the SMART App Launch Framework 2.0 EHR-launch and standalone-launch
  * flows with PKCE (S256), which both Epic and Cerner now require for public
@@ -9,7 +9,7 @@
  *
  *   1. The EHR launches us at `/launch?iss=<fhir-base>&launch=<opaque>`.
  *   2. We fetch `<iss>/.well-known/smart-configuration` to discover the
- *      authorize and token endpoints. Discovery is mandatory — endpoints are
+ *      authorize and token endpoints. Discovery is mandatory - endpoints are
  *      never hardcoded, because a single build serves every customer's EHR.
  *   3. We redirect to `authorize` with the `launch` token, our scopes, a
  *      cryptographically random `state`, and a PKCE challenge.
@@ -35,7 +35,7 @@ export interface SmartConfiguration {
 }
 
 export interface SmartLaunchConfig {
-  /** FHIR base URL of the EHR — the `iss` parameter from the launch. */
+  /** FHIR base URL of the EHR - the `iss` parameter from the launch. */
   iss: string;
   clientId: string;
   /** Only set for confidential clients (Epic backend-registered apps). */
@@ -57,7 +57,7 @@ export interface SmartTokenResponse {
   scope: string;
   refresh_token?: string;
   id_token?: string;
-  /** SMART launch context — the patient this session is scoped to. */
+  /** SMART launch context - the patient this session is scoped to. */
   patient?: string;
   encounter?: string;
   fhirUser?: string;
@@ -343,7 +343,7 @@ export async function refreshSession(
   // Servers that rotate refresh tokens send a new one; those that do not
   // expect the original to keep working.
   refreshed.refreshToken = token.refresh_token ?? session.refreshToken;
-  // Launch context is not re-issued on refresh — carry it forward.
+  // Launch context is not re-issued on refresh - carry it forward.
   refreshed.patientId ??= session.patientId;
   refreshed.encounterId ??= session.encounterId;
   refreshed.fhirUser ??= session.fhirUser;
@@ -371,7 +371,7 @@ function toSession(
 /**
  * Read `fhirUser` out of the id_token.
  *
- * This is a claim read for display, not an authentication decision — the access
+ * This is a claim read for display, not an authentication decision - the access
  * token is what authorizes, and the EHR already validated it. A full JWKS
  * signature check belongs on any path that grants access based on the claim.
  */

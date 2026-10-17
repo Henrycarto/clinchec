@@ -22,8 +22,8 @@
 -- criteria nobody involved has seen.
 --
 -- So delegation is recorded as what it is. A delegated clause is surfaced to
--- the clinician — knowing the review runs against InterQual is genuinely useful
--- when preparing a submission — and is never selected for scoring.
+-- the clinician - knowing the review runs against InterQual is genuinely useful
+-- when preparing a submission - and is never selected for scoring.
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE payer_rule_clauses

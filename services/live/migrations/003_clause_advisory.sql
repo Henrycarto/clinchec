@@ -10,7 +10,7 @@
 -- tears" onto ICD-10 prefixes is a separate inference, and it is not solved.
 --
 -- Which creates a trap. A clause with no `indication_icd10_prefixes` matches
--- every request by design — correct for a coverage statement that genuinely
+-- every request by design - correct for a coverage statement that genuinely
 -- applies unconditionally, and catastrophic for an exclusion, which would then
 -- deny every request for that procedure.
 --

@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     respect_robots_txt: bool = True
 
     # How many consecutive COMPLETE crawls a rule may be absent from before it
-    # is retired and stops being served. Only complete crawls count — a capped,
+    # is retired and stops being served. Only complete crawls count - a capped,
     # failed, or offline-seed run says nothing about whether a policy still
-    # exists — so with the nightly schedule this is roughly three days of a
+    # exists - so with the nightly schedule this is roughly three days of a
     # policy being genuinely gone.
     #
     # The trade is asymmetric. Retiring too eagerly withdraws criteria a
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # arrangement relied on Postgres's initdb hook, which runs only against an
     # empty data directory, so four migrations reached fresh databases and no
     # others. Turn this off only where a separate migrate step is guaranteed to
-    # have run first — the compose stack has one, and it calls the same code.
+    # have run first - the compose stack has one, and it calls the same code.
     run_migrations_on_startup: bool = True
 
     cors_origins: str = "http://localhost:3000"

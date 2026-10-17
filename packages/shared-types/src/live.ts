@@ -18,13 +18,13 @@ export const polaritySchema = z.enum(['covered', 'excluded']);
  * One indication-scoped adjudication within a payer rule.
  *
  * A bulletin can both cover and exclude the same CPT depending on why it is
- * being requested — Aetna CPB 0673 approves partial meniscectomy for mechanical
+ * being requested - Aetna CPB 0673 approves partial meniscectomy for mechanical
  * symptoms with mild osteoarthritis and calls it experimental for meniscal root
  * tears. A single `requires_pa` flag cannot represent that.
  */
 export const ruleClauseSchema = z.object({
   polarity: polaritySchema,
-  /** The payer's own wording — quoted verbatim on appeal, never paraphrased. */
+  /** The payer's own wording - quoted verbatim on appeal, never paraphrased. */
   indication_text: z.string(),
   indication_icd10_prefixes: z.array(z.string()).default([]),
   required_duration_weeks: z.number().int().nullish(),

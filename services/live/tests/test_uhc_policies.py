@@ -5,8 +5,8 @@ two that matter most are the ones where the correct answer is *no rule*: a
 policy that lists a code without adjudicating it, and a policy that adjudicates
 a procedure but publishes no criteria for it. Both look like coverage to a
 parser that only checks for medical-necessity language, and both would produce
-a record indistinguishable from a real rule — source URL, recent timestamp,
-prose containing "medically necessary" — for a determination nobody has read.
+a record indistinguishable from a real rule - source URL, recent timestamp,
+prose containing "medically necessary" - for a determination nobody has read.
 """
 
 from __future__ import annotations
@@ -103,7 +103,7 @@ def test_declared_but_not_adjudicated_produces_no_rule():
 
     The policy adjudicates implanted intrathecal drug delivery systems. Emitting
     a 62323 rule from it would overwrite the epidural steroid injection criteria
-    — which are real, published, and in a different document — with pump
+- which are real, published, and in a different document - with pump
     criteria, and nothing downstream could tell.
     """
     drafts = _parse("implanted-spinal-drug-delivery-systems")
@@ -183,7 +183,7 @@ def test_subject_is_the_nearest_statement_not_the_first_match():
     """Bariatric surgery lists its procedures before the governing sentence.
 
     "Sleeve gastrectomy" and "bariatric surgery" are both terms for 43644, and a
-    leftmost match quoted from the list item three lines above the verb — a
+    leftmost match quoted from the list item three lines above the verb - a
     snippet that reads as though the payer had written it that way.
     """
     draft = _by_cpt(_parse("bariatric-surgery"))["43644"]
@@ -203,7 +203,7 @@ def test_medicare_advantage_records_where_the_criteria_live():
 
     Running the commercial necessity patterns over an MA policy finds almost
     nothing, which is accurate and useless. CMS owns Medicare coverage, so the
-    plan document mostly says which CMS instrument applies — and a clinician
+    plan document mostly says which CMS instrument applies - and a clinician
     who knows the request is judged against an LCD table can go and read it.
     """
     drafts = _by_cpt(_parse("joint-procedures"))
@@ -244,7 +244,7 @@ def test_a_named_cms_determination_survives_intact():
     """The NCD number is the whole point of quoting the sentence.
 
     "(100" instead of "(100.1)" sends a clinician to a determination that does
-    not exist — the pattern has to allow a period inside a determination number
+    not exist - the pattern has to allow a period inside a determination number
     while still stopping at the end of the sentence.
     """
     draft = _by_cpt(_parse("surgical-procedures"))["43644"]
@@ -290,13 +290,13 @@ def test_the_commercial_pointer_is_followed():
     "refer to the UnitedHealthcare Commercial Medical Policy titled Bariatric
     Surgery" is a resolvable reference, and following it turns a record that
     said only "governed by CMS and a commercial policy" into one carrying the
-    payer's actual requirements — BMI thresholds, comorbidities, the lot.
+    payer's actual requirements - BMI thresholds, comorbidities, the lot.
     """
     draft = _by_cpt(_parse_chain("bariatric-surgery", "surgical-procedures"))["43644"]
 
     assert "Bariatric Surgery" in draft.clauses[0].indication_text
     # The referenced criteria, not just the reference.
-    assert "UnitedHealthcare commercial policy — Bariatric Surgery" in draft.criteria_text
+    assert "UnitedHealthcare commercial policy - Bariatric Surgery" in draft.criteria_text
     assert "Body Mass Index" in draft.criteria_text
 
 
@@ -307,7 +307,7 @@ def test_a_conditional_pointer_is_quoted_but_never_scored():
     no LCDs/LCAs, refer to the ... Commercial Medical Policy". Which members
     that covers depends on their state, and a note does not say. Attaching the
     commercial criteria as scoring clauses would apply them to everyone,
-    including members whose LCD says something else — so they are carried as
+    including members whose LCD says something else - so they are carried as
     reference text and the rule keeps no evidence requirements of its own.
     """
     draft = _by_cpt(_parse_chain("bariatric-surgery", "surgical-procedures"))["43644"]
@@ -371,7 +371,7 @@ def test_an_unresolvable_pointer_degrades_to_the_route_alone():
     clause = drafts["27447"].clauses[0]
     assert clause.polarity.value == "delegated"
     assert "commercial policy" in clause.indication_text.lower()
-    assert "UnitedHealthcare commercial policy —" not in drafts["27447"].criteria_text
+    assert "UnitedHealthcare commercial policy - " not in drafts["27447"].criteria_text
 
 
 # --- licensed content ------------------------------------------------------
@@ -385,7 +385,7 @@ def test_no_rule_carries_an_ama_code_description():
     against the actual strings from each policy's own code table rather than a
     pattern, so it fails on the real content rather than on a guess at its shape.
 
-    The same licence is why the CMS Medicare Coverage Database is unreachable —
+    The same licence is why the CMS Medicare Coverage Database is unreachable - 
     its bulk export and its API both gate on an AMA agreement granting
     "personal use only … non-commercial uses".
     """

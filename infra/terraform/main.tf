@@ -1,5 +1,5 @@
 /**
- * Clinchec — root Terraform configuration.
+ * Clinchec - root Terraform configuration.
  *
  * Everything here assumes PHI is in scope, which drives three non-negotiables
  * that show up throughout: no public subnets for anything holding data,
@@ -123,7 +123,7 @@ data "aws_caller_identity" "current" {}
 # ---------------------------------------------------------------------------
 
 resource "aws_kms_key" "main" {
-  description             = "${local.name} — PHI encryption at rest"
+  description             = "${local.name} - PHI encryption at rest"
   deletion_window_in_days = 30
   enable_key_rotation     = true
 }
@@ -250,7 +250,7 @@ resource "aws_route_table_association" "isolated" {
 }
 
 # ---------------------------------------------------------------------------
-# VPC flow logs — required evidence for a HIPAA audit
+# VPC flow logs - required evidence for a HIPAA audit
 # ---------------------------------------------------------------------------
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
@@ -299,7 +299,7 @@ resource "aws_flow_log" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# Object storage — exported PA packets
+# Object storage - exported PA packets
 # ---------------------------------------------------------------------------
 
 resource "aws_s3_bucket" "exports" {

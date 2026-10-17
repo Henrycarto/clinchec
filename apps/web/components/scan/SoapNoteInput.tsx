@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
  * 2. **This sits inside an EHR workflow.** Ctrl/Cmd+Enter scans, because a
  *    clinician between patients is not reaching for a mouse.
  *
- * A scan that is superseded by another is aborted rather than left to race —
+ * A scan that is superseded by another is aborted rather than left to race - 
  * otherwise a slow first request can overwrite the result of a faster second.
  */
 
@@ -36,7 +36,7 @@ const SOFT_MAX_CHARS = 30_000;
  * Lines of business, because the same payer adjudicates the same CPT
  * differently across them. UnitedHealthcare states its own criteria for a total
  * knee replacement under a commercial plan and routes the Medicare Advantage
- * version to a CMS coverage determination — genuinely different answers.
+ * version to a CMS coverage determination - genuinely different answers.
  *
  * Without this the rules service returns whichever record it holds by default,
  * which is a recency tiebreak: a knee scan silently landed on Medicare

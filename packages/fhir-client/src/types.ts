@@ -137,7 +137,7 @@ export interface FhirBundle<T> {
 }
 
 // ---------------------------------------------------------------------------
-// Projection helpers — FHIR resource → the flat shapes Clinchec Forms wants
+// Projection helpers - FHIR resource → the flat shapes Clinchec Forms wants
 // ---------------------------------------------------------------------------
 
 export function formatHumanName(name?: FhirHumanName[]): {
@@ -188,7 +188,7 @@ export function findPayerName(coverage: FhirCoverage): string | undefined {
 /**
  * Best-effort map from a payer's display name to a Clinchec payer slug.
  *
- * Deliberately conservative — returning `undefined` makes the UI ask the
+ * Deliberately conservative - returning `undefined` makes the UI ask the
  * clinician which payer this is, which is far better than silently scoring a
  * request against the wrong insurer's criteria.
  */

@@ -93,7 +93,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
 
   services:
-    name: Service — ${{ matrix.service }}
+    name: Service - ${{ matrix.service }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -114,20 +114,20 @@ jobs:
         run: |
           if [ -z "$CORE_REPO_TOKEN" ]; then
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "CORE_REPO_TOKEN not set — running in SCAFFOLD mode."
+            echo "CORE_REPO_TOKEN not set - running in SCAFFOLD mode."
             exit 0
           fi
           git config --global url."https://x-access-token:${CORE_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
           git submodule update --init --recursive
           echo "available=true" >> "$GITHUB_OUTPUT"
-          echo "Private core checked out — running in FULL mode."
+          echo "Private core checked out - running in FULL mode."
 
       - name: Report mode
         run: |
           if [ "${{ steps.core.outputs.available }}" = "true" ]; then
-            echo "::notice title=CI mode::FULL — private core present, service tests will run."
+            echo "::notice title=CI mode::FULL - private core present, service tests will run."
           else
-            echo "::notice title=CI mode::SCAFFOLD — private core absent. Service tests are SKIPPED, not passing. Core coverage runs in clinchec-core-* CI."
+            echo "::notice title=CI mode::SCAFFOLD - private core absent. Service tests are SKIPPED, not passing. Core coverage runs in clinchec-core-* CI."
           fi
 
       - uses: actions/setup-python@v5
@@ -148,7 +148,7 @@ jobs:
         run: python -m spacy download en_core_web_sm
 
       # Lints whatever is present. Without the core this covers the service
-      # scaffold — config, envelope, routers, schemas, main.
+      # scaffold - config, envelope, routers, schemas, main.
       - name: Lint
         working-directory: services/${{ matrix.service }}
         run: ruff check app

@@ -42,7 +42,7 @@ async function devLogin(request: NextRequest) {
 
     // Loud and unconditional: every use of the bypass leaves a trace.
     console.warn(
-      '[SECURITY] Development auth bypass used — a session was created without ' +
+      '[SECURITY] Development auth bypass used - a session was created without ' +
         'EHR authentication. This must never appear in a production log.',
     );
 

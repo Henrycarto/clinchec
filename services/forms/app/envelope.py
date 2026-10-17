@@ -4,7 +4,7 @@ Kept per-service rather than in a shared package on purpose: each service image
 builds from its own directory as its Docker context, so a cross-service Python
 import would mean either a monorepo-wide build context or a private package
 index. The contract is small and stable enough that duplication is the cheaper
-trade — and `packages/shared-types` holds the single source of truth that the
+trade - and `packages/shared-types` holds the single source of truth that the
 TypeScript side validates against.
 """
 

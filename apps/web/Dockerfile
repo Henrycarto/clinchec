@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Build context is the repo root — the app depends on packages/* via workspaces.
+# Build context is the repo root - the app depends on packages/* via workspaces.
 
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS deps
@@ -13,7 +13,7 @@ COPY packages/fhir-client/package.json ./packages/fhir-client/
 RUN npm ci
 
 # ---------------------------------------------------------------------------
-# Local development — docker-compose mounts the source over this layer.
+# Local development - docker-compose mounts the source over this layer.
 FROM node:22-alpine AS dev
 WORKDIR /srv
 ENV NODE_ENV=development

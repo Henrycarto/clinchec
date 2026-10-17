@@ -24,7 +24,7 @@ import {
  * The provenance badge is the point of this component. Auto-population is only
  * trustworthy if the clinician can see at a glance which values were copied
  * from a system of record and which were inferred from prose by the NLP
- * pipeline — the second kind is what they need to read before signing.
+ * pipeline - the second kind is what they need to read before signing.
  *
  * Editing any field marks it as clinician-entered, which both removes the
  * review flag and takes precedence server-side on submit.
@@ -42,7 +42,7 @@ const CONFIDENCE_PRESENTATION: Record<
   derived: {
     label: 'Reformatted',
     badge: 'secondary',
-    explain: 'Computed or reformatted from structured data — e.g. a date or phone number.',
+    explain: 'Computed or reformatted from structured data - e.g. a date or phone number.',
   },
   inferred: {
     label: 'From note',
@@ -143,7 +143,7 @@ export function FieldMapper({
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
         >
-          <option value="">—</option>
+          <option value=""> - </option>
           {options.map((option) => (
             <option key={option} value={option}>
               {option}

@@ -4,7 +4,7 @@
 -- `payer_rules` carries one `requires_pa` boolean and one flat criteria set per
 -- (payer, cpt, plan_type). Crawl validation showed that shape is wrong for a
 -- large share of real bulletins: 4 of 10 verified payer/procedure pairs are
--- MIXED — the same CPT is approved for one indication and explicitly excluded
+-- MIXED - the same CPT is approved for one indication and explicitly excluded
 -- for another.
 --
 --   Aetna CPB 0673, CPT 29881
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS payer_rule_clauses (
     polarity        TEXT NOT NULL CHECK (polarity IN ('covered', 'excluded')),
 
     -- What the clause applies to. `indication_text` is the payer's own wording,
-    -- kept verbatim for display and for appeals — quoting an insurer's bulletin
+    -- kept verbatim for display and for appeals - quoting an insurer's bulletin
     -- back at them is the single most effective appeal argument.
     indication_text            TEXT NOT NULL,
     indication_icd10_prefixes  TEXT[] NOT NULL DEFAULT '{}',

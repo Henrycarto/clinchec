@@ -34,7 +34,7 @@
 
     --radius: 0.625rem;
 
-    /* Approval bands — green ≥ 80%, amber 50–79%, red < 50%.
+    /* Approval bands - green ≥ 80%, amber 50–79%, red < 50%.
        Foregrounds are chosen to clear WCAG AA on their own surface. */
     --approve: 152 62% 28%;
     --approve-foreground: 152 65% 16%;

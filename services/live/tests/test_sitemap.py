@@ -38,7 +38,7 @@ def test_scheme_less_declaration_resolves_to_the_host():
     """Blue Cross of Illinois publishes `Sitemap:bcbsil.com/sitemap.xml`.
 
     No space, no scheme. `urljoin` treats that as a path and produces
-    `https://www.bcbsil.com/bcbsil.com/sitemap.xml`, which returns 503 — a
+    `https://www.bcbsil.com/bcbsil.com/sitemap.xml`, which returns 503 - a
     failure that looks like the payer being down rather than like a parsing bug
     on our side, and so gets investigated in the wrong place.
     """
@@ -140,7 +140,7 @@ async def test_one_unreachable_child_costs_only_its_own_urls():
 async def test_unreachable_robots_yields_nothing_rather_than_raising():
     """A payer we cannot reach must produce an empty crawl, not a failed one.
 
-    And emphatically not a fallback to guessed paths — guessing is what
+    And emphatically not a fallback to guessed paths - guessing is what
     discovery exists to replace.
     """
 
@@ -154,7 +154,7 @@ def test_filter_requires_the_declared_host():
     """A CMS that syndicates content points a sitemap at somebody else's domain.
 
     Without the check, an adapter politely crawls a third party under our own
-    user agent — which is our name on somebody else's access log.
+    user agent - which is our name on somebody else's access log.
     """
     entries = [
         SitemapEntry("https://example.test/medical-policy/a"),

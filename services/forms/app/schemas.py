@@ -78,7 +78,7 @@ class FormDefinition(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Canonical PA payload — what the mapper reads from
+# Canonical PA payload - what the mapper reads from
 # ---------------------------------------------------------------------------
 
 class PatientPayload(BaseModel):

@@ -1,11 +1,11 @@
-# Clinchec Dashboard — practice admin view
+# Clinchec Dashboard - practice admin view
 
 **Status: not started.** This workspace is a placeholder so the monorepo layout
 and CI matrix already account for it.
 
 ## What it will be
 
-`apps/web` is the clinician surface — one note, one request, in the exam room.
+`apps/web` is the clinician surface - one note, one request, in the exam room.
 This app is the *practice manager* surface, and the questions it answers are
 different:
 
@@ -14,7 +14,7 @@ different:
   the labelled dataset that replaces the rule engine in `services/scan` with a
   trained model.
 - **Payer performance.** Turnaround time and approval rate per payer, per
-  procedure — the number a practice uses when negotiating a contract.
+  procedure - the number a practice uses when negotiating a contract.
 - **Rule change feed.** What Clinchec Live saw change this month and which of a
   practice&rsquo;s in-flight requests it affects.
 - **User and role management.** Delegating PA submission to staff without

@@ -2,7 +2,7 @@
 
 The important property here is *quietness*. A payer republishing the same
 criteria must produce zero writes and zero alerts, because a rules feed that
-cries wolf nightly gets ignored — and the one night the criteria genuinely
+cries wolf nightly gets ignored - and the one night the criteria genuinely
 change is the night that matters. Change detection is therefore checksum-based
 over the adjudicating fields only.
 """
@@ -39,7 +39,7 @@ _MATERIAL_FIELDS = (
     "icd10_codes",
 )
 
-#: Clause changes are reported separately — a new exclusion is the single most
+#: Clause changes are reported separately - a new exclusion is the single most
 #: consequential thing a payer can publish, and it must never be buried in a
 #: list diff alongside a reworded criteria paragraph.
 _CLAUSE_FIELD = "clauses"
@@ -53,7 +53,7 @@ async def apply_drafts(
     """Persist a crawl's drafts, writing only what actually changed.
 
     `crawl` carries whether the run actually surveyed the payer. Without it,
-    absence is not counted at all — the safe default for callers that only mean
+    absence is not counted at all - the safe default for callers that only mean
     to write drafts, such as a manual re-sync.
     """
     report = SyncReport(payer_slug=payer_slug)
@@ -65,7 +65,7 @@ async def apply_drafts(
         stored_checksum = await get_checksum(payer_slug, draft.cpt_code, plan_type)
 
         if stored_checksum == checksum:
-            # Same criteria — just record that we re-verified them today.
+            # Same criteria - just record that we re-verified them today.
             await touch_rule(payer_slug, draft.cpt_code, plan_type)
             report.unchanged += 1
             continue
@@ -93,7 +93,7 @@ async def apply_drafts(
         if diff:
             await record_revision(payer_slug, draft.cpt_code, plan_type, diff)
             logger.warning(
-                "%s/%s: criteria changed — %s",
+                "%s/%s: criteria changed - %s",
                 payer_slug,
                 draft.cpt_code,
                 ", ".join(diff),
@@ -114,7 +114,7 @@ async def _retire_absent(
 
     The whole difficulty is telling that from a crawl that merely came back
     short. A payer being down, discovery returning stale paths, the page cap
-    truncating the document list, an offline seed run — all produce fewer rules
+    truncating the document list, an offline seed run - all produce fewer rules
     and none of them says a policy was withdrawn. The August 2026 validation is
     the case to keep in mind: UHC discovery returned four stale paths and parsed
     nothing, which "absent means gone" would have read as UnitedHealthcare
@@ -157,7 +157,7 @@ async def _retire_absent(
         # Warning, not info: this withdraws criteria from every practice using
         # them, and it is the one outcome here that changes what Scan returns.
         logger.warning(
-            "%s/%s (%s): retired — absent from %d consecutive complete crawls",
+            "%s/%s (%s): retired - absent from %d consecutive complete crawls",
             payer_slug,
             cpt_code,
             plan_type,
@@ -197,7 +197,7 @@ def _diff_clauses(previous: list, current: list) -> dict:  # noqa: ANN001
 
     Reported separately from the flat criteria fields because the consequences
     differ in kind. A new *exclusion* means requests Clinchec approved yesterday
-    will be denied today — the practice needs to know before submitting, not
+    will be denied today - the practice needs to know before submitting, not
     after a denial. A removed exclusion widens coverage and is worth surfacing
     for the opposite reason.
     """

@@ -1,6 +1,6 @@
 """The `{ data, error, meta }` response envelope shared by every Clinchec API.
 
-Every route — success or failure — returns this shape, so the frontend has a
+Every route - success or failure - returns this shape, so the frontend has a
 single unwrap path and error handling never depends on the status code alone.
 """
 

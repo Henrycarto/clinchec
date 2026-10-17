@@ -1,4 +1,4 @@
-"""Adapter tests — criteria parsing, change detection and politeness.
+"""Adapter tests - criteria parsing, change detection and politeness.
 
 No network: the crawl mechanics are exercised against a mock transport, and the
 parsing is exercised against representative policy prose.

@@ -1,7 +1,7 @@
 """What documenting a missing element would be worth.
 
 The product question is "does fixing this matter", and the score's own weights
-answer it exactly — which is the whole reason it can be answered at all.
+answer it exactly - which is the whole reason it can be answered at all.
 
 The line this must not cross: Clinchec has never observed a submitted request's
 outcome. It has nothing to calibrate a probability against, so "raises approval
@@ -97,7 +97,7 @@ def test_no_driver_can_exceed_its_advertised_ceiling(parser):
 
     Each entry is the ceiling written into that driver's satisfied branch. If a
     weight is raised in one place and not the other, the counterfactual quietly
-    understates what a clinician would gain — so it is asserted rather than
+    understates what a clinician would gain - so it is asserted rather than
     trusted to stay in step.
     """
     for note in (THIN, COMPLETE):
@@ -133,7 +133,7 @@ def test_gaps_carry_their_driver_and_are_ranked(parser):
     """Each gap names the driver it belongs to, so the price is never inferred.
 
     Ranked by worth, so the first entry is the one to write if the clinician
-    only writes one — the engine records gaps in evaluation order, which is a
+    only writes one - the engine records gaps in evaluation order, which is a
     different thing entirely.
     """
     assessment = _assess(parser, THIN)
@@ -151,7 +151,7 @@ def test_a_bonus_driver_absent_is_priced_at_its_ceiling(parser):
     """Functional impairment awards up to 5 and penalises nothing when absent.
 
     No driver exists to carry a penalty, so an earlier version left the gap
-    unpriced — understating it as zero when the swing is exactly the ceiling.
+    unpriced - understating it as zero when the swing is exactly the ceiling.
     """
     assessment = _assess(parser, THIN)
     impairment = next(
@@ -187,7 +187,7 @@ def test_a_gap_names_the_payer_that_demands_it(parser):
     """Whose requirement it is, which the merge would otherwise erase.
 
     `merged_with` takes the payer's value where it has one and the baseline's
-    otherwise, and afterwards they are indistinguishable — so provenance is read
+    otherwise, and afterwards they are indistinguishable - so provenance is read
     before the merge and travels with the gap.
     """
     from app.models.scoring import PayerRule, RuleClause
@@ -218,7 +218,7 @@ def test_a_gap_names_the_payer_that_demands_it(parser):
     assert "medically necessary" in (by_key["duration"].payer_quote or "")
 
     # Laterality is a coding rule nobody's policy asked for, so it is not
-    # attributed to the payer — claiming it were would put words in their mouth.
+    # attributed to the payer - claiming it were would put words in their mouth.
     assert by_key["laterality"].required_by is None
     assert by_key["laterality"].payer_quote is None
 

@@ -11,7 +11,7 @@ Implementation lives in `packages/fhir-client` (protocol) and
 
 ## Supported launch modes
 
-**EHR launch** — the clinician opens Clinchec from inside a patient's chart.
+**EHR launch** - the clinician opens Clinchec from inside a patient's chart.
 The EHR calls our launch URL with the FHIR base and an opaque launch token:
 
 ```
@@ -21,7 +21,7 @@ GET /api/auth/launch?iss=https://fhir.epic.com/.../api/FHIR/R4&launch=abc123
 The patient in context arrives in the token response, so the note and payer are
 pre-filled with no patient search.
 
-**Standalone launch** — the clinician opens Clinchec directly. There is no
+**Standalone launch** - the clinician opens Clinchec directly. There is no
 launch token, so `launch` is swapped for `launch/patient` and the EHR shows a
 patient picker at the authorize screen.
 
@@ -65,7 +65,7 @@ and the `iss` arrives with the launch, so `discoverSmartConfiguration()` reads
 
 S256 only. Epic and Cerner both require PKCE for public clients, and Epic
 requires it even for confidential ones. The verifier is 96 random bytes
-(128 base64url characters — the spec maximum). If the server does not advertise
+(128 base64url characters - the spec maximum). If the server does not advertise
 S256 support, `buildAuthorizeUrl` refuses rather than downgrading.
 
 ### `aud` is not optional
@@ -77,7 +77,7 @@ without it. It binds the token to the resource server it is meant for.
 
 Confidential clients (registered with a secret) use HTTP Basic on the token
 request. Public clients send `client_id` in the body. Sending both is a spec
-violation that Epic rejects — `exchangeCodeForToken` picks exactly one based on
+violation that Epic rejects - `exchangeCodeForToken` picks exactly one based on
 whether `FHIR_CLIENT_SECRET` is set.
 
 ## The `iss` allowlist
@@ -92,10 +92,10 @@ at a server they control and harvest both. HTTPS is also enforced (except for
 `localhost`).
 
 ```bash
-# Single tenant — FHIR_ISSUER is used as the allowlist
+# Single tenant - FHIR_ISSUER is used as the allowlist
 FHIR_ISSUER=https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
 
-# Multi-tenant — comma-separated base URLs or host suffixes
+# Multi-tenant - comma-separated base URLs or host suffixes
 FHIR_ALLOWED_ISSUERS=https://fhir.epic.com/...,https://fhir-myrecord.cerner.com/...
 ```
 
@@ -109,7 +109,7 @@ granting read access to patient records plus the patient identifier. A signed
 cookie is readable by anyone holding it.
 
 The PKCE verifier and CSRF `state` are parked in a *separate*, 10-minute cookie
-that is deleted on first read — it needs to survive exactly one round trip.
+that is deleted on first read - it needs to survive exactly one round trip.
 
 On callback, `state` is compared in constant time against the parked value. A
 mismatch means the callback did not originate from a launch we started, and the
@@ -153,7 +153,7 @@ seconds ahead of expiry, so no call races the clock. A refresh writes the new
 session straight back to the cookie via the `onSessionRefreshed` callback.
 
 Servers that rotate refresh tokens send a new one; those that do not expect the
-original to keep working — `refreshSession` handles both. Launch context
+original to keep working - `refreshSession` handles both. Launch context
 (`patient`, `encounter`, `fhirUser`) is not re-issued on refresh and is carried
 forward explicitly.
 
@@ -180,7 +180,7 @@ Epic's sandbox test patients (Camila Lopez, Derrick Lin) have problem lists and
 notes attached, which is enough to exercise the full pre-fill path.
 
 Without these variables the login page says so explicitly and the rest of the
-app still runs — Scan, Live and Forms have no FHIR dependency, so you can
+app still runs - Scan, Live and Forms have no FHIR dependency, so you can
 develop against them by pasting notes directly.
 
 ### Working on the UI without an EHR
@@ -194,10 +194,10 @@ built to fail closed:
 
 | Control | Behaviour |
 | --- | --- |
-| Default | Off. Only the exact string `true` enables it — not `1`, `yes` or `TRUE`. |
+| Default | Off. Only the exact string `true` enables it - not `1`, `yes` or `TRUE`. |
 | Production | Refused outright when `NODE_ENV=production`, **even with the flag set**. Checked independently of the flag, in `lib/dev-auth-guard.ts`. |
 | Discovery | `/api/auth/dev-login` returns **404** while disabled, not 403, so a production deployment does not advertise that the endpoint exists. |
-| Credential | The token is a literal placeholder and `iss` is `https://dev-bypass.invalid/` — the reserved `.invalid` TLD (RFC 2606) can never resolve, so a stray FHIR call fails at DNS rather than reaching a live server. |
+| Credential | The token is a literal placeholder and `iss` is `https://dev-bypass.invalid/` - the reserved `.invalid` TLD (RFC 2606) can never resolve, so a stray FHIR call fails at DNS rather than reaching a live server. |
 | Visibility | Sessions are tagged `dev: true`, render a permanent non-dismissible banner, and log a `[SECURITY]` warning on every use. |
 | FHIR calls | `getFhirClient()` returns `null` for a dev session, so callers take their existing "no EHR context" path instead of issuing a doomed request. |
 
@@ -206,7 +206,7 @@ test runner, no framework), and CI additionally asserts the production refusal
 at the environment level so a regression cannot ship unnoticed.
 
 There is no EHR data in a bypassed session, so the dashboard opens with an
-empty note field rather than a pre-filled one — which is exactly the path a
+empty note field rather than a pre-filled one - which is exactly the path a
 standalone launch takes anyway.
 
 ## Known gaps

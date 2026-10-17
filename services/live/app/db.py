@@ -1,6 +1,6 @@
 """Async persistence for Clinchec Live.
 
-Schema is owned by `migrations/001_init.sql` and the migrations after it —
+Schema is owned by `migrations/001_init.sql` and the migrations after it - 
 this module maps onto them rather than declaring its own DDL, so there is
 exactly one definition of the tables. `app/migrations.py` applies them.
 """
@@ -80,7 +80,7 @@ async def ping(settings: Settings) -> bool:
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))
         return True
-    except Exception as exc:  # noqa: BLE001 — health check must not raise
+    except Exception as exc:  # noqa: BLE001 - health check must not raise
         logger.warning("Database ping failed: %s", exc)
         return False
 
@@ -120,7 +120,7 @@ async def get_rule(
     over the payer's `any`-plan default, because a Medicare Advantage member is
     adjudicated against different criteria than a commercial one.
     """
-    # `CAST(:x AS text)` rather than `:x::text` — SQLAlchemy's `text()` does not
+    # `CAST(:x AS text)` rather than `:x::text` - SQLAlchemy's `text()` does not
     # bind a parameter when a colon immediately follows the name, so the
     # PostgreSQL cast shorthand silently leaves a literal ':' in the statement.
     query = _RULE_SELECT + """
@@ -161,7 +161,7 @@ async def list_rules(
 
     `include_retired` exists for operators, not for scoring. A retired rule is
     withheld rather than deleted precisely so somebody can look at what was
-    dropped and why — but nothing that scores a request should ever ask for one.
+    dropped and why - but nothing that scores a request should ever ask for one.
     """
     query = _RULE_SELECT + """
         WHERE p.slug = :payer_slug
@@ -305,8 +305,8 @@ async def get_checksum(payer_slug: str, cpt_code: str, plan_type: str) -> str | 
 async def touch_rule(payer_slug: str, cpt_code: str, plan_type: str) -> None:
     """Record that an unchanged rule was re-verified.
 
-    Freshness is a product feature — the UI shows how recently a rule was
-    confirmed — so an unchanged crawl still has to move `last_verified_at`.
+    Freshness is a product feature - the UI shows how recently a rule was
+    confirmed - so an unchanged crawl still has to move `last_verified_at`.
 
     Seeing a rule also cancels any retirement in progress, and un-retires one
     already retired. A payer republishing a withdrawn policy should bring its
@@ -336,7 +336,7 @@ async def count_absences(
     """Count this crawl's absences, and retire the ones that have run out.
 
     `seen` is `(cpt_code, plan_type)` for every rule the crawl produced. Call
-    only after a complete crawl — a run that was capped, that failed a fetch, or
+    only after a complete crawl - a run that was capped, that failed a fetch, or
     that served seeds has not surveyed the payer, and its silence is not
     evidence.
 
@@ -364,8 +364,8 @@ async def count_absences(
             )
         """
     else:
-        # A complete crawl that produced nothing at all. Possible — a payer can
-        # withdraw every policy we track — and every stored rule is absent.
+        # A complete crawl that produced nothing at all. Possible - a payer can
+        # withdraw every policy we track - and every stored rule is absent.
         absent = ""
 
     bump = f"""
@@ -476,7 +476,7 @@ async def replace_clauses(
         if rule_id is None:
             return 0
 
-        # A row-value comparison — `(polarity, indication_text) <> ALL(:keep)` —
+        # A row-value comparison - `(polarity, indication_text) <> ALL(:keep)` - 
         # requires binding a list of tuples, which asyncpg rejects as an
         # anonymous composite type. Comparing a single text key instead keeps
         # this to a plain text[] and matches the unique index exactly.

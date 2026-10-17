@@ -1,13 +1,13 @@
 """Indication-scoped adjudication.
 
-Crawl validation found that 4 of 10 verified payer/procedure pairs are MIXED —
+Crawl validation found that 4 of 10 verified payer/procedure pairs are MIXED - 
 the same CPT is approved for one indication and explicitly excluded for another.
 Aetna CPB 0673 approves partial meniscectomy for mechanical symptoms with mild
 osteoarthritis, and calls it experimental for meniscal root tears.
 
 A single `requires_pa` boolean cannot express that. Scoring a root-tear request
 against mechanical-symptom criteria returns a confident green on a request the
-bulletin explicitly denies — the same failure shape as mapping lumbar MRI to the
+bulletin explicitly denies - the same failure shape as mapping lumbar MRI to the
 spinal-fusion bulletin, one layer up.
 
 These tests pin the behaviour that fixes it:
@@ -97,7 +97,7 @@ def test_exclusion_offers_no_improvable_drivers(scan) -> None:
     """An exclusion is decided on indication alone.
 
     Presenting driver deltas would imply the request is improvable by better
-    documentation. It is not — so the assessment must not offer a list of gaps
+    documentation. It is not - so the assessment must not offer a list of gaps
     to close.
     """
     parsed, diagnoses, procedures = scan
@@ -228,7 +228,7 @@ def test_advisory_exclusion_never_denies(scan) -> None:
     """The regression this flag exists to prevent.
 
     An unscoped exclusion matches every request. If it were selectable it would
-    deny the entire procedure for every patient — which is exactly what happened
+    deny the entire procedure for every patient - which is exactly what happened
     when the flag was dropped crossing the Live/Scan boundary and defaulted to
     False.
     """

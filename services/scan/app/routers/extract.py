@@ -1,4 +1,4 @@
-"""`POST /extract` — the endpoint the physician's Scan button calls.
+"""`POST /extract` - the endpoint the physician's Scan button calls.
 
 Takes a raw SOAP note, returns the structured extraction plus a preliminary
 approval-confidence score, wrapped in the standard `{ data, error, meta }`
@@ -170,9 +170,9 @@ async def _fetch_payer_rule(
     for a total knee replacement under a commercial plan and routes the Medicare
     Advantage version to a CMS coverage determination. Without it, Live returns
     whichever rule it holds by default and the score is computed against the
-    wrong line of business — silently, because both records look equally real.
+    wrong line of business - silently, because both records look equally real.
 
-    Live being unavailable must never fail a scan — the rule engine simply
+    Live being unavailable must never fail a scan - the rule engine simply
     falls back to the national baseline and reports `basis="rule_engine"`, so
     the clinician still gets a score and knows which basis produced it.
     """
@@ -224,7 +224,7 @@ async def _fetch_payer_rule(
                 source_snippet=clause.get("source_snippet", ""),
                 # Defaulting this to False would make an unscoped exclusion
                 # selectable, and an exclusion with no ICD scope matches every
-                # request — turning a clause meant to raise a question into one
+                # request - turning a clause meant to raise a question into one
                 # that denies the entire procedure. Default to advisory when the
                 # field is absent, so a stale Live version fails safe.
                 advisory=bool(clause.get("advisory", True)),

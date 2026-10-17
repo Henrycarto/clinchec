@@ -2,7 +2,7 @@
 
 `guard.assess()` was calibrated against 8 live Aetna CPB pages and validated by
 hand at 27/27. That validation needed a fetched corpus, so it could not run in
-CI — which left the module that decides whether crawled criteria are real with
+CI - which left the module that decides whether crawled criteria are real with
 no automated coverage at all.
 
 These tests replay the same three regions per bulletin from a committed
@@ -17,7 +17,7 @@ load on Aetna's servers.
 
 The Background case is the one that matters. A naive keyword check for
 "medically necessary" passes it, because literature review says that constantly
-while summarising trials — which is why the guard scores marker *density* and
+while summarising trials - which is why the guard scores marker *density* and
 region *structure* rather than presence.
 """
 
@@ -56,7 +56,7 @@ def _stub(sample_len: int, region_chars: int, page_chars: int) -> str:
 
     `assess` reads `page_text` only for its length. Background samples are
     size-capped in the fixture, so the stub is scaled to keep the proportion
-    the full document had — otherwise truncation alone would drop a 70%
+    the full document had - otherwise truncation alone would drop a 70%
     extraction under the ratio ceiling and flip the verdict.
     """
     if not region_chars:
@@ -85,7 +85,7 @@ def test_navigation_chrome_is_rejected(cpb: str) -> None:
 
 @pytest.mark.parametrize("cpb", PAGE_IDS)
 def test_background_section_is_rejected(cpb: str) -> None:
-    """Right page, wrong region — the case a keyword check would pass."""
+    """Right page, wrong region - the case a keyword check would pass."""
     page = PAGES[cpb]
     sample = page["background_sample"]
     stub = _stub(len(sample), page["background_chars"], page["page_chars"])
@@ -153,7 +153,7 @@ def test_length_alone_would_not_have_separated_these() -> None:
     """Guards the reasoning, not just the code.
 
     The superseded check was `len(text) < 80`. Policy sections run as short as
-    ~600 chars while chrome reaches ~220 — overlapping ranges with a real
+    ~600 chars while chrome reaches ~220 - overlapping ranges with a real
     policy inside the gap, so no length threshold works. If a future change
     reintroduces one, this fails.
     """

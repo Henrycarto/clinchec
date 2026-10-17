@@ -136,7 +136,7 @@ async def submit(
     pa_request_id = str(uuid.uuid4())
 
     # Real transmission requires per-payer credentials and an executed BAA.
-    # Until those are configured, produce a downloadable packet — never a
+    # Until those are configured, produce a downloadable packet - never a
     # silent no-op that a clinician could mistake for a submission.
     if not settings.submission_enabled or channel is SubmissionChannel.EXPORT:
         result = SubmissionResult(

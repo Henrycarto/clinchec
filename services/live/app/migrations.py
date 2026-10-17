@@ -3,8 +3,8 @@
 The gap this closes: `migrations/` used to be mounted at Postgres's
 `/docker-entrypoint-initdb.d`, which runs **only when the data directory is
 empty**. Every migration after `001_init.sql` therefore applied to fresh
-databases and to no others. Four of them — rule clauses, the advisory flag, the
-delegated polarity, retirement — had to be run by hand against any environment
+databases and to no others. Four of them - rule clauses, the advisory flag, the
+delegated polarity, retirement - had to be run by hand against any environment
 older than they were, and nothing recorded whether that had happened.
 
 So this is a real runner:
@@ -15,8 +15,8 @@ So this is a real runner:
 * a Postgres advisory lock means several service instances starting at once
   produce one migration run and several no-ops, rather than a race.
 
-Every migration in the tree is written to be safely re-runnable — `IF NOT
-EXISTS`, `DROP CONSTRAINT IF EXISTS`, `ON CONFLICT DO NOTHING` — which is what
+Every migration in the tree is written to be safely re-runnable - `IF NOT
+EXISTS`, `DROP CONSTRAINT IF EXISTS`, `ON CONFLICT DO NOTHING` - which is what
 lets this adopt a database that was built by the old initdb path: the first run
 against an existing schema re-applies everything, changes nothing, and records
 it. Keep new migrations to that standard.
@@ -34,7 +34,7 @@ from app.db import init_engine
 logger = logging.getLogger(__name__)
 
 #: Migrations live beside the service that owns the schema. Live is the only
-#: service with database access — Scan and Forms reach it through Live's API —
+#: service with database access - Scan and Forms reach it through Live's API - 
 #: so "shared schema in infra/" described the file's location rather than its
 #: ownership, and put it outside the Docker build context of the one image that
 #: needs it.
@@ -119,7 +119,7 @@ async def apply_pending(
                 logger.info("Applying migration %s", path.name)
                 try:
                     await driver.execute(sql)
-                except Exception as exc:  # noqa: BLE001 — re-raised with context
+                except Exception as exc:  # noqa: BLE001 - re-raised with context
                     raise MigrationError(f"{path.name} failed: {exc}") from exc
 
                 await driver.execute(

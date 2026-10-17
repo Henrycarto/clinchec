@@ -7,7 +7,7 @@ either denies every meniscectomy or silently approves the excluded indication.
 
 Roughly half these tests assert that the matcher **abstains**. That is the
 point. A confident wrong match scores a request against criteria the payer does
-not apply to it, which is worse than no match at all — the caller falls back to
+not apply to it, which is worse than no match at all - the caller falls back to
 code scoping or reports the indication is not addressed.
 """
 
@@ -81,7 +81,7 @@ def test_mechanical_symptom_note_selects_coverage() -> None:
 
 
 def test_the_two_notes_reach_opposite_clauses() -> None:
-    """The whole point — same CPT, same code family, opposite answers."""
+    """The whole point - same CPT, same code family, opposite answers."""
     root = match(CLAUSES, ROOT_TEAR_NOTE)
     mech = match(CLAUSES, MECHANICAL_NOTE)
     assert root is not None and mech is not None

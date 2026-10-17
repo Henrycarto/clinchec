@@ -1,4 +1,4 @@
-# Clinchec — architecture
+# Clinchec - architecture
 
 ## The problem this shape solves
 
@@ -18,8 +18,8 @@ them:
 | How do I get that onto the payer's form? | **Clinchec Forms** |
 
 Keeping these separate is not microservice fashion. They have genuinely
-different runtime shapes — Scan is CPU-bound and latency-critical, Live is a
-long-running crawler on a schedule, Forms is I/O-bound and stateless — and
+different runtime shapes - Scan is CPU-bound and latency-critical, Live is a
+long-running crawler on a schedule, Forms is I/O-bound and stateless - and
 different blast radii. A payer redesigning their portal must not be able to slow
 down a clinician's scan.
 
@@ -66,7 +66,7 @@ down a clinician's scan.
 3. Matched entities resolve to ICD-10-CM and CPT candidates, with laterality
    detected from surrounding text and side-specific codes rewritten to match.
 4. If the caller named a payer, Scan asks Live for that payer's current criteria
-   for the requested CPT. **Live being unavailable never fails a scan** — the
+   for the requested CPT. **Live being unavailable never fails a scan** - the
    rule engine falls back to the national baseline and reports which basis it
    used.
 5. The rule engine produces a score in `[0, 1]` with a signed, named
@@ -84,8 +84,8 @@ thousands of submitted requests paired with payer outcomes, and Clinchec has to
 be useful before it can collect them.
 
 The rule engine is designed to be the thing that collects them. Every score
-decomposes into named drivers with signed deltas — `duration`, `conservative_care`,
-`indication` — and those drivers are exactly the feature vector a model would
+decomposes into named drivers with signed deltas - `duration`, `conservative_care`,
+`indication` - and those drivers are exactly the feature vector a model would
 train on. When there are enough labelled outcomes, `basis` flips from
 `rule_engine` to `ml_model` and the wire contract does not change.
 
@@ -95,7 +95,7 @@ is what it is and fix the note. An opaque 43% changes no behaviour.
 ## Data model notes
 
 Full schema: `services/live/migrations/001_init.sql`. Migrations are
-applied by `services/live/app/migrations.py` — at Live's startup, and by a
+applied by `services/live/app/migrations.py` - at Live's startup, and by a
 one-shot `migrate` step the rest of the stack waits on. Live is the only
 service with database access, which is why it owns them.
 
@@ -104,8 +104,8 @@ service with database access, which is why it owns them.
   exists in the EHR, which is already the system of record; copying it here
   would double the PHI surface for no benefit.
 - **`payer_rules.criteria_embedding` is a 1536-dimension pgvector column** with
-  an HNSW index. This backs similarity search over criteria prose — "which
-  payers word this requirement the same way" — which is how a new payer's rules
+  an HNSW index. This backs similarity search over criteria prose - "which
+  payers word this requirement the same way" - which is how a new payer's rules
   get bootstrapped from an existing one rather than parsed from scratch.
 - **`payer_rule_revisions` is append-only.** When criteria change, the diff is
   recorded. This is what lets a practice answer "was this denial correct under

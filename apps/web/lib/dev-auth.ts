@@ -20,7 +20,7 @@ import type { AppSession } from './session';
  *      quietly accepting unauthenticated users. See `dev-auth-guard.ts`.
  *   3. **Carries no usable credential.** The token is a literal placeholder and
  *      `iss` points at the reserved `.invalid` TLD (RFC 2606), which can never
- *      resolve — so a stray FHIR call fails at DNS instead of reaching a real
+ *      resolve - so a stray FHIR call fails at DNS instead of reaching a real
  *      server with a real patient behind it.
  *   4. **Announces itself.** Sessions are tagged `dev: true`, the UI shows a
  *      permanent banner, and every use is logged.
@@ -36,7 +36,7 @@ export {
   isDevBypassEnabled,
 } from './dev-auth-guard';
 
-/** Eight hours — the same lifetime a real SMART session gets. */
+/** Eight hours - the same lifetime a real SMART session gets. */
 const DEV_SESSION_TTL_MS = 1000 * 60 * 60 * 8;
 
 /**

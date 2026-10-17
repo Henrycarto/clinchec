@@ -42,7 +42,7 @@ import {
  * Two ideas drive the layout:
  *
  * **Confidence is shown, never hidden.** Every extracted value carries the
- * model's confidence as a visible band — high (≥ 85%), medium (60–84%), low
+ * model's confidence as a visible band - high (≥ 85%), medium (60–84%), low
  * (< 60%). A clinician signing a prior authorization is accountable for what it
  * says, so a value the model is unsure about has to look different from one it
  * is certain of. Confidence bands use their own neutral-to-warm scale, distinct
@@ -68,12 +68,12 @@ const TIER_STYLES: Record<ConfidenceTier, { dot: string; label: string; text: st
   high: { dot: 'bg-sky-600', label: 'High confidence', text: 'text-sky-700 dark:text-sky-400' },
   medium: {
     dot: 'bg-violet-500',
-    label: 'Medium confidence — worth a glance',
+    label: 'Medium confidence - worth a glance',
     text: 'text-violet-700 dark:text-violet-400',
   },
   low: {
     dot: 'bg-zinc-400',
-    label: 'Low confidence — verify before submitting',
+    label: 'Low confidence - verify before submitting',
     text: 'text-zinc-600 dark:text-zinc-400',
   },
 };
@@ -348,8 +348,8 @@ export function ExtractionResult({ result, note, className }: ExtractionResultPr
                     ordered by what closing each is worth, so the first line is
                     the one to write if the clinician only writes one. Pairing
                     them here by position would put the wrong number on the
-                    wrong line — functional impairment records a gap from a
-                    branch with no unmet driver — which is why the key travels
+                    wrong line - functional impairment records a gap from a
+                    branch with no unmet driver - which is why the key travels
                     with the gap rather than being inferred. */}
                 <ol className="space-y-2.5">
                   {approval.gaps.map((gap, index) => (
@@ -538,8 +538,8 @@ function EntityGroup({ label, entities }: { label: EntityLabel; entities: Clinic
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
               style.chip,
-              // A negated finding is documented absence. It stays visible —
-              // "denies red flags" is clinically meaningful — but must never
+              // A negated finding is documented absence. It stays visible - 
+              // "denies red flags" is clinically meaningful - but must never
               // read as an affirmative finding.
               entity.negated && 'opacity-60 line-through decoration-1',
             )}

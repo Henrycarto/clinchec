@@ -74,7 +74,7 @@ async def _crawl_all() -> list[dict]:
                 await record_crawl(result)
                 results.append(result)
                 logger.info(
-                    "%s: %s — %d rules seen, %d changed, %d retired, %d counting",
+                    "%s: %s - %d rules seen, %d changed, %d retired, %d counting",
                     adapter.slug,
                     result.status.value,
                     result.rules_seen,

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Mirrors `services/scan/app/schemas.py`. Keep the two in step — the endpoint
+ * Mirrors `services/scan/app/schemas.py`. Keep the two in step - the endpoint
  * tests assert the Python shape, and these schemas assert the wire shape the
  * frontend consumes.
  */
@@ -80,7 +80,7 @@ export const scoreDriverSchema = z.object({
   satisfied: z.boolean(),
   /**
    * Points documenting this would add. Present on unmet drivers only, and
-   * arithmetic over the score's own weights rather than a probability — see
+   * arithmetic over the score's own weights rather than a probability - see
    * `potential_delta` in services/scan/app/schemas.py.
    */
   potential_delta: z.number().nullish(),
@@ -90,7 +90,7 @@ export const scoreDriverSchema = z.object({
  * How confidently the payer's own criteria answer this request.
  *
  * Deliberately separate from the approval band. The band stays green/amber/red,
- * while this records what the number rests on — "we evaluated this payer's
+ * while this records what the number rests on - "we evaluated this payer's
  * clause" and "this payer publishes nothing about this indication" are
  * indistinguishable in a score, and they call for different next steps.
  */
@@ -99,7 +99,7 @@ export const coverageStatusSchema = z.enum([
   'excluded',
   'indication_not_addressed',
   /**
-   * The payer adjudicates this procedure against criteria it does not publish —
+   * The payer adjudicates this procedure against criteria it does not publish - 
    * UnitedHealthcare defers its surgical policies to InterQual. Must stay in
    * step with `CoverageStatus` in services/scan/app/schemas.py: a value the
    * service can emit and this enum does not list fails the whole parse, and the
@@ -130,7 +130,7 @@ export const approvalAssessmentSchema = z.object({
   /**
    * The same gaps, each tied to the driver it belongs to and priced, ordered by
    * what closing it is worth. Prefer this over `missing_elements`, which is the
-   * flat projection kept for callers that only want the prose — the two cannot
+   * flat projection kept for callers that only want the prose - the two cannot
    * be paired by position, and doing so puts the wrong number on the wrong line.
    */
   gaps: z.array(scoreGapSchema).default([]),
@@ -215,7 +215,7 @@ export type ExtractRequest = z.input<typeof extractRequestSchema>;
 /**
  * The approval-band thresholds, defined once.
  *
- * Green ≥ 80%, amber 50–79%, red below 50% — the same cut points the Python
+ * Green ≥ 80%, amber 50–79%, red below 50% - the same cut points the Python
  * rule engine bands on, so the badge can never disagree with the service.
  */
 export const APPROVAL_THRESHOLDS = { green: 0.8, amber: 0.5 } as const;

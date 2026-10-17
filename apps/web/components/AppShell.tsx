@@ -80,7 +80,7 @@ export function AppShell({
       <footer className="border-t py-4">
         <div className="container flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <p>Clinchec · Prior authorization pre-screening</p>
-          <p>Decision support only — not a coverage determination.</p>
+          <p>Decision support only - not a coverage determination.</p>
         </div>
       </footer>
     </div>

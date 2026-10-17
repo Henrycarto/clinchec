@@ -3,7 +3,7 @@
  *
  * Deliberately not a general-purpose FHIR library: Clinchec reads a patient,
  * their active conditions, their coverage, and their clinical notes. A narrow
- * client is auditable — you can see on one screen exactly which PHI the app is
+ * client is auditable - you can see on one screen exactly which PHI the app is
  * capable of requesting, which is the first question every hospital security
  * review asks.
  */
@@ -137,7 +137,7 @@ export class FhirClient {
    * Clinical notes, newest first.
    *
    * This is the SOAP-note source for Scan. `type` filters to progress notes
-   * (LOINC 11506-3) and consult notes (11488-4) — pulling every
+   * (LOINC 11506-3) and consult notes (11488-4) - pulling every
    * DocumentReference would return scanned faxes and discharge paperwork.
    */
   async getClinicalNotes(

@@ -11,7 +11,7 @@
 
 resource "aws_security_group" "database" {
   name        = "${local.name}-database"
-  description = "PostgreSQL — reachable only from Clinchec services"
+  description = "PostgreSQL - reachable only from Clinchec services"
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${local.name}-database" }
@@ -19,7 +19,7 @@ resource "aws_security_group" "database" {
 
 resource "aws_security_group" "cache" {
   name        = "${local.name}-cache"
-  description = "ElastiCache Redis — reachable only from Clinchec services"
+  description = "ElastiCache Redis - reachable only from Clinchec services"
   vpc_id      = aws_vpc.main.id
 
   tags = { Name = "${local.name}-cache" }
@@ -103,7 +103,7 @@ resource "aws_db_parameter_group" "main" {
     value = "1"
   }
 
-  # Log any statement over a second — the payer-rule similarity searches are
+  # Log any statement over a second - the payer-rule similarity searches are
   # the ones worth watching as the corpus grows.
   parameter {
     name  = "log_min_duration_statement"
@@ -166,7 +166,7 @@ resource "aws_db_instance" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# Redis — Celery broker and result backend
+# Redis - Celery broker and result backend
 # ---------------------------------------------------------------------------
 
 resource "aws_elasticache_subnet_group" "main" {

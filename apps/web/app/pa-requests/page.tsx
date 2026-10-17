@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
  *
  * The request history itself is served from `pa_requests` once submission is
  * wired end to end. Until then this page shows what Clinchec Live actually
- * knows — which payers are tracked and how fresh their criteria are — because
+ * knows - which payers are tracked and how fresh their criteria are - because
  * an empty worklist should still tell the practice something true rather than
  * render a placeholder table of invented rows.
  */

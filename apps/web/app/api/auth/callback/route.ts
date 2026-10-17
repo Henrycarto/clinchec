@@ -101,7 +101,7 @@ function redirectToLogin(origin: string, code: string, message: string) {
   return NextResponse.redirect(url);
 }
 
-/** Only ever redirect to a path on this origin — never to a supplied URL. */
+/** Only ever redirect to a path on this origin - never to a supplied URL. */
 function safeReturnTo(returnTo?: string): string {
   if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) {
     return '/dashboard';

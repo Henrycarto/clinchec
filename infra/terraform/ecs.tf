@@ -3,7 +3,7 @@
  * Clinchec Live Celery worker and beat scheduler.
  *
  * Tasks run in the private subnets and are reachable only through the ALB.
- * The worker and beat services have no load balancer at all — nothing outside
+ * The worker and beat services have no load balancer at all - nothing outside
  * the VPC should be able to address them.
  */
 
@@ -127,7 +127,7 @@ resource "aws_iam_role" "task" {
     # Run-to-completion, not a service, but it still needs a task role: the
     # database credential is injected by the execution role, and the task role
     # is what would carry any AWS access the migration itself needed. It has
-    # none, which is the point — a migration reaches Postgres and nothing else.
+    # none, which is the point - a migration reaches Postgres and nothing else.
     migrate = local.services.live
   })
 
@@ -136,7 +136,7 @@ resource "aws_iam_role" "task" {
 }
 
 # Only Forms writes to the export bucket. Scan and Live have no S3 access at
-# all — least privilege is per-service, not per-cluster.
+# all - least privilege is per-service, not per-cluster.
 resource "aws_iam_role_policy" "forms_exports" {
   name = "write-exports"
   role = aws_iam_role.task["forms"].id
@@ -384,7 +384,7 @@ resource "aws_ecs_service" "services" {
     rollback = true
   }
 
-  # Keep full capacity during a deploy — a scan that fails because the only
+  # Keep full capacity during a deploy - a scan that fails because the only
   # task is restarting is a scan the clinician does not retry.
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
@@ -409,11 +409,11 @@ resource "aws_ecs_service" "services" {
 # It runs *before* the new images roll out, which means every migration has to
 # be backward compatible with the code currently serving traffic: add columns
 # and tables, do not drop or rename them in the same release. A destructive
-# change is two deploys — stop using it, then remove it.
+# change is two deploys - stop using it, then remove it.
 #
 # `RUN_MIGRATIONS_ON_STARTUP` is false on the services for the same reason. If
 # they migrated on boot, a bad migration would fail every task, trip the
-# deployment circuit breaker, and roll back — noisier than a deploy that stops
+# deployment circuit breaker, and roll back - noisier than a deploy that stops
 # at the migration step, and against a schema that may be half-applied.
 
 resource "aws_ecs_task_definition" "migrate" {
@@ -537,7 +537,7 @@ resource "aws_ecs_service" "live_beat" {
 }
 
 # ---------------------------------------------------------------------------
-# Autoscaling — Scan only; it is the request-bound service
+# Autoscaling - Scan only; it is the request-bound service
 # ---------------------------------------------------------------------------
 
 resource "aws_appautoscaling_target" "scan" {

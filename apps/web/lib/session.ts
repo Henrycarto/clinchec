@@ -68,7 +68,7 @@ async function decrypt<T>(token: string): Promise<T | null> {
     const { payload } = await jwtDecrypt(token, secret(), { issuer: 'clinchec' });
     return payload as T;
   } catch {
-    // Tampered, expired, or encrypted under a rotated key — all mean "no session".
+    // Tampered, expired, or encrypted under a rotated key - all mean "no session".
     return null;
   }
 }

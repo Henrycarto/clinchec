@@ -6,7 +6,7 @@ import type { Config } from 'tailwindcss';
  * Green / amber / red are used to communicate a clinical-financial risk
  * judgement, so the tokens are defined once here and consumed by name
  * everywhere. Each band pairs a surface with a foreground that clears WCAG AA
- * against it — clinicians read these badges on bad monitors in bright rooms,
+ * against it - clinicians read these badges on bad monitors in bright rooms,
  * and roughly 1 in 12 male physicians has a red-green colour vision
  * deficiency, which is why every band is also carried by an icon and a label
  * rather than by hue alone.

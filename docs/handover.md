@@ -40,7 +40,7 @@ Push a core first and its CI checks out the *published* public scaffold, which
 does not yet have the definition, and fails on import.
 
 I got this wrong twice. Both times the fix was to push the other side and
-re-run — but the fifteen minutes of red is avoidable, and on a shared branch it
+re-run - but the fifteen minutes of red is avoidable, and on a shared branch it
 is somebody else's morning.
 
 One case the rule does not cover: a **behaviour** change in a core whose
@@ -69,8 +69,8 @@ Consequences that are now load-bearing:
 - Fixtures are captured whole. Truncating one flipped Aetna CPB 0236's verdict,
   because the head of a policy is denser than the whole. Where a fixture *is*
   cut, the cut point and original length are recorded in the file.
-- A mapping is derived from the payer's own statement — an Applicable Codes
-  table, a policy title — not from a filename or a keyword guess.
+- A mapping is derived from the payer's own statement - an Applicable Codes
+  table, a policy title - not from a filename or a keyword guess.
 - When something cannot be determined, the code says so and emits nothing.
   Silence beats a confident wrong answer everywhere in this system.
 
@@ -100,8 +100,8 @@ contract.
 
 That paragraph contains "medically necessary", so a parser reads it as coverage
 and stores the deferral sentence as criteria. The score that follows is
-indistinguishable from a real one — same band, same drivers, same source URL,
-same fresh timestamp — for a determination nobody involved has seen. A delegated
+indistinguishable from a real one - same band, same drivers, same source URL,
+same fresh timestamp - for a determination nobody involved has seen. A delegated
 clause is surfaced and never scored, and migration `004` enforces that it
 carries no evidence requirements.
 
@@ -113,7 +113,7 @@ unscoped exclusion would otherwise match every request and deny the lot.
 
 The exception, and it is deliberate: a decisive **text** match can select an
 advisory clause, because the note's own language is sometimes the only thing
-that separates two indications sharing a code (Aetna CPB 0673 — meniscal root
+that separates two indications sharing a code (Aetna CPB 0673 - meniscal root
 tears and mechanical-symptom tears are both M23.2xx).
 
 ### Absence is evidence only from a complete crawl
@@ -138,7 +138,7 @@ docker compose -f infra/docker-compose.yml up -d
 
 Web on `:3000`, Scan `:8001`, Live `:8002`, Forms `:8003`.
 
-`OFFLINE_SEED_MODE=true` by default — adapters load transcribed seed criteria
+`OFFLINE_SEED_MODE=true` by default - adapters load transcribed seed criteria
 and touch no payer infrastructure. That is the right default for development
 and CI. Set it false only for a deliberate live crawl.
 
@@ -154,7 +154,7 @@ environment level as well as in a unit test.
 - **Python venvs must sit on a short path.** spaCy's DLL loading fails on long
   Windows paths; use something like `C:\…\Temp\clv`.
 - **Migrations do not self-apply to an existing volume.** They used to rely on
-  Postgres's initdb hook, which only fires on an empty data directory — see §5.
+  Postgres's initdb hook, which only fires on an empty data directory - see §5.
 - **`npm run build --workspace packages/shared-types` is a no-op** by design;
   the package ships TypeScript source consumed via `transpilePackages`.
 
@@ -176,7 +176,7 @@ that fail *differently*:
 | Missing **field** | Zod strips unknown keys. The field silently never arrives. Silent. |
 
 Both have happened. `criteria_delegated` was missing from the enum, so every
-UnitedHealthcare knee, hip and shoulder scan rendered "version mismatch" —
+UnitedHealthcare knee, hip and shoulder scan rendered "version mismatch" - 
 exactly the delegated cases. `plan_type` was missing from the request mirror, so
 the web app could not send it at all and every scan was scored against whichever
 line of business the rules service returned by default.
@@ -198,7 +198,7 @@ Migrations are `services/live/migrations/*.sql`, applied by
 - a Postgres advisory lock serialises concurrent starts;
 - failure is fatal at startup.
 
-They live beside Live because **Live is the only service with database access** —
+They live beside Live because **Live is the only service with database access** - 
 Scan and Forms reach it through Live's API. That also puts them inside the one
 Docker build context that needs them.
 
@@ -209,7 +209,7 @@ migration stops the deploy instead of failing every task and tripping the
 circuit breaker.
 
 **Every migration must be backward compatible with the code currently serving
-traffic** — it runs *before* the new images roll out. Add columns and tables;
+traffic** - it runs *before* the new images roll out. Add columns and tables;
 never drop or rename in the same release. A destructive change is two deploys.
 Keep them re-runnable (`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`); a test
 asserts it.
@@ -243,8 +243,8 @@ use only … non-commercial uses"**, and the API's 401 body embeds the same term
 Not accepted on this product's behalf. An AMA CPT licence unblocks it.
 
 **You likely need that licence anyway.** Scan returns CPT descriptors in its
-extraction output. Live no longer *stores* them — that was removed once the
-licence question surfaced — but the descriptors reaching a browser are AMA text.
+extraction output. Live no longer *stores* them - that was removed once the
+licence question surfaced - but the descriptors reaching a browser are AMA text.
 
 ---
 
@@ -257,7 +257,7 @@ OAuth, discovery, PKCE, `aud` binding, issuer allowlist, JWE cookies); the
 adjudication registry with named patterns; retirement; migrations; CI green
 across three repos; a deploy pipeline with a gated migration step.
 
-The local database at handover holds **21 active rules and 23 clauses** — UHC 14
+The local database at handover holds **21 active rules and 23 clauses** - UHC 14
 (3 retired), Aetna 4, BCBS 3 seeded. The UHC and Aetna rules came from live
 crawls; the BCBS three are the seeded national baseline, for the reason in §6.
 
@@ -312,7 +312,7 @@ crawls; the BCBS three are the seeded national baseline, for the reason in §6.
   form with the driver key and price; `missing_elements` is the flat projection
   the justification drafter reads. A test asserts they agree.
 - Gaps are paired to drivers **by key, never by position**. The two lists are
-  not parallel — functional impairment records a gap from a branch with no unmet
+  not parallel - functional impairment records a gap from a branch with no unmet
   driver. A positional join was written, checked, and removed; a test asserts it
   stays removed.
 - Band labels describe the note ("Well documented", "Gaps to close", "Not ready

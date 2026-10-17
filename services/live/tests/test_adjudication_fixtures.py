@@ -73,7 +73,7 @@ def _case(bulletin: str, cpt: str) -> dict:
 
 
 def test_cited_only_is_not_governed() -> None:
-    """CPB 0743 mentions MRI as evidence for laminectomy — it does not govern it."""
+    """CPB 0743 mentions MRI as evidence for laminectomy - it does not govern it."""
     case = _case("0743", "72148")
     found = find_adjudications(PAGES["0743"]["policy_marked"], case["terms"])
     assert found == [], f"0743 wrongly governs 72148 via {[f.pattern for f in found]}"

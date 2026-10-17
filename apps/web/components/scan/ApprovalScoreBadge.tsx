@@ -10,7 +10,7 @@ import { BAND_PRESENTATION, cn, formatPercent } from '@/lib/utils';
 /**
  * The approval-confidence indicator.
  *
- * Green ≥ 80%, amber 50–79%, red below 50% — the thresholds the rule engine
+ * Green ≥ 80%, amber 50–79%, red below 50% - the thresholds the rule engine
  * bands on, imported rather than re-derived so the badge can never disagree
  * with the service that produced the score.
  *
@@ -83,7 +83,7 @@ export function ApprovalScoreBadge({
  * The full-width score panel shown at the top of a scan result.
  *
  * The bar is a secondary encoding of the same number and is marked
- * decorative — the badge above it already announces the value.
+ * decorative - the badge above it already announces the value.
  */
 export function ApprovalScorePanel({
   approval,
@@ -154,7 +154,7 @@ export function ApprovalScorePanel({
         What the number rests on.
 
         A clinician will not act on a percentage from a system that will not say
-        where it came from, and Scan already computes the answer — which clause
+        where it came from, and Scan already computes the answer - which clause
         governed, the insurer's own sentence, and any restriction it could read
         but not scope. All of it arrived in the browser correctly typed and none
         of it was rendered, so the most defensible part of the assessment was

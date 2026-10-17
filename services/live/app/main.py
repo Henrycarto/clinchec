@@ -1,4 +1,4 @@
-"""Clinchec Live — FastAPI read API over the payer rules database.
+"""Clinchec Live - FastAPI read API over the payer rules database.
 
 The crawling itself happens in Celery workers; this process serves what they
 wrote. Scan calls `/rules/{payer}/{cpt}` on every scored note, so these reads
@@ -53,7 +53,7 @@ async def _migrate() -> None:
 
     Deliberately fatal on failure, unlike seeding below. A service that starts
     against a half-migrated schema serves reads that look fine right up until
-    they touch the column that never arrived — and the whole point of this step
+    they touch the column that never arrived - and the whole point of this step
     is that nothing was tracking whether migrations had been applied.
 
     Also invoked as a one-shot `migrate` step in compose so the Celery worker
@@ -73,7 +73,7 @@ async def _seed_if_empty() -> None:
     """Load each adapter's published-criteria seed set on a cold database.
 
     Without this a fresh deployment serves 404s until the first scheduled crawl
-    completes — up to six hours during which every scan silently falls back to
+    completes - up to six hours during which every scan silently falls back to
     the national baseline. Seeding is idempotent (checksum-compared) and only
     runs when the table is genuinely empty, so a restart against a populated
     database is a no-op.
@@ -87,13 +87,13 @@ async def _seed_if_empty() -> None:
 
         from app.tasks.rules_sync import apply_drafts
 
-        logger.info("Rules table is empty — loading adapter seed sets")
+        logger.info("Rules table is empty - loading adapter seed sets")
         created = 0
         for adapter in build_adapters(settings):
             report = await apply_drafts(adapter.slug, adapter.seed_rules())
             created += report.created
         logger.info("Seeded %d payer rules", created)
-    except Exception:  # noqa: BLE001 — seeding must never block startup
+    except Exception:  # noqa: BLE001 - seeding must never block startup
         logger.exception("Rule seeding failed; Live will serve whatever is stored")
 
 
@@ -225,7 +225,7 @@ async def list_payer_rules(
     include_retired: bool = Query(
         default=False,
         description="Include rules withdrawn because their source document "
-        "stopped being published. For inspection only — nothing that scores a "
+        "stopped being published. For inspection only - nothing that scores a "
         "request should ask for a retired rule.",
     ),
 ) -> Envelope[list[PayerRuleResult]]:
@@ -244,7 +244,7 @@ async def list_payer_rules(
 async def trigger_crawl(payer_slug: str, request: Request) -> Envelope[dict]:
     """Queue an out-of-band crawl for one payer.
 
-    Returns immediately with the task id — a full portal sweep runs for
+    Returns immediately with the task id - a full portal sweep runs for
     minutes, well past any sensible HTTP timeout.
     """
     if payer_slug.lower() not in REGISTERED_SLUGS:
@@ -285,6 +285,6 @@ def _ping_broker() -> bool:
 
         client = redis.Redis.from_url(settings.celery_broker_url, socket_connect_timeout=2)
         return bool(client.ping())
-    except Exception as exc:  # noqa: BLE001 — health check must not raise
+    except Exception as exc:  # noqa: BLE001 - health check must not raise
         logger.warning("Broker ping failed: %s", exc)
         return False

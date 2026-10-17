@@ -1,8 +1,8 @@
-"""Clinchec Scan — FastAPI application entrypoint.
+"""Clinchec Scan - FastAPI application entrypoint.
 
 Boots the NLP pipeline once at startup (model load is ~1s and must not land on
 a physician's first request), installs the shared error handlers so every
-response — including validation failures — carries the `{ data, error, meta }`
+response - including validation failures - carries the `{ data, error, meta }`
 envelope, and exposes `/health` for the ECS/compose health check.
 """
 
@@ -96,7 +96,7 @@ async def request_context(request: Request, call_next):
     elapsed_ms = (time.perf_counter() - started) * 1000
 
     response.headers["X-Request-ID"] = request_id
-    # Note text is PHI and is never logged — only shape and timing.
+    # Note text is PHI and is never logged - only shape and timing.
     logger.info(
         "%s %s -> %d in %.0f ms [%s]",
         request.method,
@@ -109,7 +109,7 @@ async def request_context(request: Request, call_next):
 
 
 # ---------------------------------------------------------------------------
-# Error handling — every failure keeps the envelope shape
+# Error handling - every failure keeps the envelope shape
 # ---------------------------------------------------------------------------
 
 @app.exception_handler(ApiError)
@@ -126,7 +126,7 @@ async def handle_api_error(request: Request, exc: ApiError):
 @app.exception_handler(RequestValidationError)
 async def handle_validation_error(request: Request, exc: RequestValidationError):
     # Pydantic puts the originating exception object in `ctx`, which is not
-    # JSON-serialisable — and could echo submitted note text back. Keep only
+    # JSON-serialisable - and could echo submitted note text back. Keep only
     # the location and the message.
     issues = [
         {

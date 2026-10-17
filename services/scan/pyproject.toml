@@ -1,7 +1,7 @@
 [project]
 name = "clinchec-scan"
 version = "0.1.0"
-description = "Clinchec Scan — clinical NLP extraction microservice"
+description = "Clinchec Scan - clinical NLP extraction microservice"
 requires-python = ">=3.12"
 
 [tool.ruff]

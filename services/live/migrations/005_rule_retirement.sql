@@ -20,13 +20,13 @@
 -- produces nothing for many reasons that have no bearing on whether a policy
 -- still exists: the payer was down, discovery returned stale paths, the
 -- per-run page cap truncated the document list, the run was an offline seed.
--- The August validation is the cautionary case — UHC discovery returned four
+-- The August validation is the cautionary case - UHC discovery returned four
 -- stale paths and parsed nothing, and a naive "absent means gone" rule would
 -- have retired the entire UnitedHealthcare rule set on the strength of it.
 --
 -- So absence is counted, not acted on. `missed_crawls` increments only on a
--- crawl that was complete — succeeded, not capped, no fetch failures, not a
--- seed run — and retirement waits for several of those in a row. Any crawl
+-- crawl that was complete - succeeded, not capped, no fetch failures, not a
+-- seed run - and retirement waits for several of those in a row. Any crawl
 -- that produces the rule again resets the counter and clears `retired_at`,
 -- because a payer republishing a policy should bring its rule back rather than
 -- leave a tombstone.
@@ -43,7 +43,7 @@ COMMENT ON COLUMN payer_rules.missed_crawls IS
 
 COMMENT ON COLUMN payer_rules.retired_at IS
     'When the source document was concluded gone. A retired rule is not served '
-    'to Scan — it is withheld rather than deleted, so the decision is visible '
+    'to Scan - it is withheld rather than deleted, so the decision is visible '
     'and reversible, and so a payer republishing the policy un-retires it.';
 
 -- Reads filter on it constantly; retirement is rare. Index the common case.

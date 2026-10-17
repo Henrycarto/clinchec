@@ -2,8 +2,8 @@
 
 UnitedHealthcare's commercial knee, hip and shoulder policies say the surgery
 "is proven and medically necessary in certain circumstances" and then defer to
-InterQual, which is licensed content. The circumstances — the part that decides
-the request — are not in the document and are not anywhere we can read.
+InterQual, which is licensed content. The circumstances - the part that decides
+the request - are not in the document and are not anywhere we can read.
 
 The tempting behaviour is the dangerous one. The deferral paragraph contains
 "medically necessary", so a parser reads it as coverage, stores it as
@@ -50,14 +50,14 @@ DELEGATED = RuleClause(
         "them."
     ),
     source_snippet=(
-        "Surgery of the knee is proven and medically necessary — For medical "
+        "Surgery of the knee is proven and medically necessary - For medical "
         "necessity clinical coverage criteria, refer to the InterQual CP: "
         "Procedures"
     ),
     advisory=True,
 )
 
-#: The same policy states its own exclusions. Those still deny — UHC wrote them.
+#: The same policy states its own exclusions. Those still deny - UHC wrote them.
 EXCLUDED = RuleClause(
     polarity="excluded",
     indication_text="knee pain without radiographic degenerative change",
@@ -89,7 +89,7 @@ def test_text_matching_cannot_reach_a_delegated_clause(scan):
     """The text matcher runs over every clause, advisory ones included.
 
     Without an explicit exclusion it could pick the delegated clause and hand
-    back something with no requirements — which scores as though the payer had
+    back something with no requirements - which scores as though the payer had
     asked for nothing at all.
     """
     delegated_worded_like_the_note = RuleClause(
@@ -140,7 +140,7 @@ def test_a_routing_advisory_keeps_its_own_wording(scan):
             "The plan does not restate the criteria, so this request cannot be "
             "pre-screened against them here."
         ),
-        source_snippet="Surgery of the Knee — refer to the table for Surgery of the Knee",
+        source_snippet="Surgery of the Knee - refer to the table for Surgery of the Knee",
         advisory=True,
     )
     parsed, diagnoses, procedures = scan

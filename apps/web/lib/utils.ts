@@ -30,7 +30,7 @@ export interface BandPresentation {
  * Band labels describe the note, not the payer's decision.
  *
  * "Likely approved" and "Likely denied" were predictions about an insurer's
- * behaviour, and Clinchec has never seen a submitted request's outcome — there
+ * behaviour, and Clinchec has never seen a submitted request's outcome - there
  * is nothing to calibrate such a claim against. What the score does measure is
  * how completely the note documents what the criteria ask for, which is both
  * defensible and the thing the clinician can act on before the visit ends.
@@ -81,7 +81,7 @@ export function formatDuration(value: number, unit: string): string {
   return `${rounded} ${rounded === 1 ? singular : `${singular}s`}`;
 }
 
-/** "3 hours ago" / "12 days ago" — used for payer-rule freshness. */
+/** "3 hours ago" / "12 days ago" - used for payer-rule freshness. */
 export function formatRelativeHours(hours: number): string {
   if (hours < 1) return 'just now';
   if (hours < 24) return `${Math.round(hours)}h ago`;

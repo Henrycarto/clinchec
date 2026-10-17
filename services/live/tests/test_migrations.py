@@ -7,7 +7,7 @@ recorded whether that had happened.
 
 The database-touching behaviour is proven against a real Postgres in the drill
 that accompanies this change. What is worth pinning here is the file discipline
-the runner depends on — ordering, immutability, and the idempotency that lets it
+the runner depends on - ordering, immutability, and the idempotency that lets it
 adopt a database built by the old path.
 """
 
@@ -60,7 +60,7 @@ def test_checksum_ignores_line_endings():
     """The repository is developed on Windows and deployed on Linux.
 
     A checksum that moved with the line endings would report every migration as
-    modified on the first Linux run — and the runner treats a changed checksum
+    modified on the first Linux run - and the runner treats a changed checksum
     as tampering and refuses to start.
     """
     assert _checksum("SELECT 1;\r\nSELECT 2;\r\n") == _checksum("SELECT 1;\nSELECT 2;\n")
@@ -75,7 +75,7 @@ def test_a_missing_directory_is_an_error_not_an_empty_run(tmp_path):
 
 def test_the_packaged_directory_is_the_one_that_ships():
     """The runner looks beside the service, not at a path outside the Docker
-    build context — which is what made the files unreachable from the image."""
+    build context - which is what made the files unreachable from the image."""
     assert MIGRATIONS_DIR.name == "migrations"
     assert MIGRATIONS_DIR.parent.name == "live"
     assert (MIGRATIONS_DIR / "001_init.sql").exists()

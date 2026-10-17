@@ -1,5 +1,5 @@
 """Parser-level tests. These run without network and without a spaCy model
-download — the blank-pipeline fallback covers everything except noun chunks.
+download - the blank-pipeline fallback covers everything except noun chunks.
 """
 
 from __future__ import annotations
@@ -118,7 +118,7 @@ def test_extracts_condition_duration_in_weeks(parser):
 
 
 def test_prefers_symptom_duration_over_treatment_duration(parser):
-    # The note mentions "8 weeks of physical therapy" — that must not win.
+    # The note mentions "8 weeks of physical therapy" - that must not win.
     duration = parser.parse(NOTE_LUMBAR).duration
     assert duration is not None
     assert duration.unit == "months"

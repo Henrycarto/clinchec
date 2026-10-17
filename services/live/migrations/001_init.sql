@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- Clinchec — initial schema
+-- Clinchec - initial schema
 -- Runs automatically on first boot of the postgres container.
 -- ---------------------------------------------------------------------------
 

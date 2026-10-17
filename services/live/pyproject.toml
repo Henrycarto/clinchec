@@ -1,7 +1,7 @@
 [project]
 name = "clinchec-live"
 version = "0.1.0"
-description = "Clinchec Live — payer portal poller and rules database"
+description = "Clinchec Live - payer portal poller and rules database"
 requires-python = ">=3.12"
 
 [tool.ruff]
@@ -31,5 +31,5 @@ pythonpath = ["."]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.ruff.lint.per-file-ignores]
-# Research harnesses, run by hand against live portals — not service code.
+# Research harnesses, run by hand against live portals - not service code.
 "app/payers/tools/*" = ["ASYNC230", "SIM102", "T201"]

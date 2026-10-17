@@ -11,13 +11,13 @@ export const dynamic = 'force-dynamic';
  * The signed-out surface.
  *
  * Deliberately not a marketing page. Clinchec is launched from inside an EHR
- * over SMART on FHIR, so nobody arrives here to be persuaded — the two people
+ * over SMART on FHIR, so nobody arrives here to be persuaded - the two people
  * who reach this URL are a clinician whose session died between patients, who
  * needs to get back in and not read anything, and somebody evaluating the
  * product, who needs evidence rather than adjectives.
  *
  * Both are better served by the rules table's actual state than by a
- * description of it. "Aetna — 4 rules, verified 2 hours ago" is a checkable
+ * description of it. "Aetna - 4 rules, verified 2 hours ago" is a checkable
  * claim; "polls payer portals continuously" is a sentence anyone can write.
  */
 export default async function HomePage() {
@@ -26,7 +26,7 @@ export default async function HomePage() {
 
   // Logged, not swallowed. The table degrading to nothing is the right
   // behaviour for a clinician, and it is also exactly what a misconfigured
-  // service URL looks like — which is how this page shipped once already
+  // service URL looks like - which is how this page shipped once already
   // fetching the browser's localhost from inside the container.
   const payers = await listPayers().catch((error) => {
     console.error('Could not read payer coverage for the signed-out page', error);
@@ -93,7 +93,7 @@ async function PayerTable({
 }) {
   if (!payers) {
     // Live being unreachable is not an error worth shouting about on a sign-in
-    // page — it says nothing about whether the clinician can work.
+    // page - it says nothing about whether the clinician can work.
     return null;
   }
 

@@ -8,8 +8,8 @@ missed enum value is invisible until a clinician hits the one code path that
 produces it.
 
 That happened: `CoverageStatus.CRITERIA_DELEGATED` was added to the service and
-not to the Zod enum, so every UnitedHealthcare knee, hip and shoulder scan —
-exactly the delegated cases — failed the parse and rendered "version mismatch"
+not to the Zod enum, so every UnitedHealthcare knee, hip and shoulder scan - 
+exactly the delegated cases - failed the parse and rendered "version mismatch"
 instead of a result. Nothing caught it, because the service tests never go
 through Zod and the web tests never call the service.
 
@@ -43,7 +43,7 @@ def _zod_enum(name: str) -> set[str]:
 def test_coverage_status_mirror_is_complete():
     """A value the service emits and the mirror omits fails the entire parse.
 
-    Not just the field — Zod rejects the whole response, so a delegated rule
+    Not just the field - Zod rejects the whole response, so a delegated rule
     took out the score, the codes and the evidence along with it.
     """
     assert _zod_enum("coverageStatusSchema") == {s.value for s in CoverageStatus}
@@ -56,8 +56,8 @@ def test_approval_band_mirror_is_complete():
 def test_the_assessment_mirror_has_every_field():
     """A field the service emits and the mirror omits is silently dropped.
 
-    Unlike a bad enum value this does not fail the parse — Zod strips unknown
-    keys — so `gaps` would simply never arrive and the card would render empty
+    Unlike a bad enum value this does not fail the parse - Zod strips unknown
+    keys - so `gaps` would simply never arrive and the card would render empty
     with nothing anywhere saying why.
     """
     from app.schemas import ApprovalAssessment
@@ -78,7 +78,7 @@ def test_the_assessment_mirror_has_every_field():
 def test_the_request_mirror_has_every_field():
     """The same drift, on the way in.
 
-    A request field the mirror omits cannot be expressed by the client at all —
+    A request field the mirror omits cannot be expressed by the client at all - 
     `plan_type` shipped on the service and in the router while the web app had
     no way to send it, so every scan was scored against whichever line of
     business the rules service happened to return.

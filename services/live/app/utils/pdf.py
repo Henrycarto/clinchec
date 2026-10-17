@@ -2,7 +2,7 @@
 
 Not every payer publishes criteria as HTML. UnitedHealthcare publishes each
 medical policy as a PDF under `/content/dam/provider/docs/public/policies/`, and
-the criteria live in a named section — "Coverage Rationale" — bounded by the next
+the criteria live in a named section - "Coverage Rationale" - bounded by the next
 named section. So the two things an adapter needs from a PDF are its text and a
 way to cut a named section out of it.
 
@@ -24,8 +24,8 @@ import re
 
 logger = logging.getLogger(__name__)
 
-#: Payer policies run to ~60 pages. Beyond that we are reading something else —
-#: an archive bundle or an update log — and extraction is wasted work.
+#: Payer policies run to ~60 pages. Beyond that we are reading something else - 
+#: an archive bundle or an update log - and extraction is wasted work.
 DEFAULT_MAX_PAGES = 120
 
 
@@ -46,7 +46,7 @@ def extract_text(data: bytes, *, max_pages: int = DEFAULT_MAX_PAGES) -> str:
         reader = PdfReader(io.BytesIO(data))
         pages = reader.pages[:max_pages]
         text = "\n".join(page.extract_text() or "" for page in pages)
-    except Exception as exc:  # noqa: BLE001 — pypdf raises a wide variety
+    except Exception as exc:  # noqa: BLE001 - pypdf raises a wide variety
         logger.warning("pdf: extraction failed (%s)", exc)
         return ""
 
@@ -86,14 +86,14 @@ def code_table(text: str) -> dict[str, str]:
 
     UHC lists them one per line as `<code> <description>`, which is the payer's
     own statement of which codes a policy covers. Reading it is what keeps the
-    CPT-to-policy mapping derived rather than assumed — the alternative is a
+    CPT-to-policy mapping derived rather than assumed - the alternative is a
     hand-maintained keyword table, and a wrong entry there is invisible until it
     mis-scores a request.
 
     **Do not persist or serve the descriptions.** The codes themselves are
     facts; their descriptions are AMA CPT text, and payers reproduce them under
     a licence Clinchec does not hold. The same licence is why the CMS Medicare
-    Coverage Database is out of reach — its bulk export and its API both gate on
+    Coverage Database is out of reach - its bulk export and its API both gate on
     an AMA agreement granting "personal use only … non-commercial uses".
 
     They are returned because reading a `code description` line is how the codes

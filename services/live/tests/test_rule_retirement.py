@@ -2,8 +2,8 @@
 
 The interesting tests here are the ones asserting that retirement does *not*
 happen. A crawl produces fewer rules for many reasons that say nothing about
-what a payer publishes — it was down, discovery returned stale paths, the page
-cap truncated the document list, the run served offline seeds — and the August
+what a payer publishes - it was down, discovery returned stale paths, the page
+cap truncated the document list, the run served offline seeds - and the August
 2026 validation is the case to keep in mind: UnitedHealthcare discovery returned
 four stale paths and parsed nothing. "Absent means gone" would have read that as
 UnitedHealthcare withdrawing its entire rule set.
@@ -138,7 +138,7 @@ async def test_a_complete_crawl_with_no_drafts_still_sweeps(swept):
     """A payer can withdraw every policy we track.
 
     Guarding the sweep behind `if drafts:` would make that the one case
-    retirement never reaches — the rules would sit there forever, citing
+    retirement never reaches - the rules would sit there forever, citing
     documents that no longer exist.
     """
     report = await _sweep([], _crawl())

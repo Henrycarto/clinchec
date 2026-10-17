@@ -42,14 +42,14 @@ class RuleClause(BaseModel):
     """One indication-scoped adjudication within a payer rule.
 
     A bulletin routinely both covers and excludes the same CPT depending on the
-    indication — Aetna CPB 0673 approves partial meniscectomy for mechanical
+    indication - Aetna CPB 0673 approves partial meniscectomy for mechanical
     symptoms with mild OA and calls it experimental for meniscal root tears.
     A single `requires_pa` boolean cannot express that, and collapsing it
     produces a confident approval on a request the payer explicitly denies.
     """
 
     polarity: Polarity
-    #: The payer's own wording. Kept verbatim — this is what gets quoted on appeal.
+    #: The payer's own wording. Kept verbatim - this is what gets quoted on appeal.
     indication_text: str
     indication_icd10_prefixes: list[str] = Field(default_factory=list)
 
@@ -64,14 +64,14 @@ class RuleClause(BaseModel):
     source_snippet: str = ""
 
     #: True when the indication could not be resolved to ICD-10 prefixes. The
-    #: clause is shown to the clinician but never decides the score — an
+    #: clause is shown to the clinician but never decides the score - an
     #: unscoped exclusion would otherwise deny every request for the procedure.
     advisory: bool = False
 
     def matches(self, icd10_codes: list[str]) -> bool:
         """Whether this clause governs a patient presenting with these codes.
 
-        A clause with no ICD prefixes applies unconditionally — some bulletins
+        A clause with no ICD prefixes applies unconditionally - some bulletins
         adjudicate a procedure without scoping to an indication at all.
         """
         if not self.indication_icd10_prefixes:
@@ -166,7 +166,7 @@ class PayerRuleResult(BaseModel):
     effective_date: date | None = None
     clauses: list[RuleClause] = Field(default_factory=list)
     last_verified_at: datetime
-    # How stale the record is. The UI shows this — a rule verified 4 hours ago
+    # How stale the record is. The UI shows this - a rule verified 4 hours ago
     # carries different weight than one last seen 6 weeks ago.
     staleness_hours: float = 0.0
 
@@ -200,7 +200,7 @@ class CrawlResult(BaseModel):
     #:
     #: Only a complete run may conclude anything from a rule's *absence*. A run
     #: that was capped by `payer_max_pages_per_run`, that failed to fetch a
-    #: document, or that served offline seeds did not survey the payer — and
+    #: document, or that served offline seeds did not survey the payer - and
     #: treating its silence as evidence would retire rules that are alive.
     #:
     #: Defaults to False so a code path that forgets to set it withholds the

@@ -93,7 +93,7 @@ export interface LaunchContext {
  * Pull everything the PA form needs out of the EHR in one pass.
  *
  * Each resource is fetched independently and a failure on any one degrades
- * that section rather than the whole launch — a practice whose Coverage
+ * that section rather than the whole launch - a practice whose Coverage
  * resources are not exposed should still get patient demographics
  * auto-filled instead of an error page.
  */

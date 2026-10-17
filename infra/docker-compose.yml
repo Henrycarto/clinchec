@@ -28,7 +28,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       # No initdb mount. That hook fires only when the data directory is empty,
       # which is precisely why migrations 002-005 reached fresh databases and no
-      # others. The `migrate` service below owns this now — one mechanism that
+      # others. The `migrate` service below owns this now - one mechanism that
       # works on an empty database and a five-month-old one alike.
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-clinchec} -d ${POSTGRES_DB:-clinchec}']
@@ -127,7 +127,7 @@ services:
     environment:
       <<: *python-env
       SERVICE_NAME: clinchec-live-worker
-    # Override the image's HTTP probe — a Celery worker serves no HTTP. Asking
+    # Override the image's HTTP probe - a Celery worker serves no HTTP. Asking
     # the worker to answer a ping is the equivalent liveness signal.
     healthcheck:
       test: ['CMD-SHELL', 'celery -A app.tasks.celery_app inspect ping -t 10 || exit 1']
@@ -152,7 +152,7 @@ services:
     environment:
       <<: *python-env
       SERVICE_NAME: clinchec-live-beat
-    # Beat exposes nothing to probe — no HTTP port, and it does not answer the
+    # Beat exposes nothing to probe - no HTTP port, and it does not answer the
     # worker ping. Reporting no health is honest; inheriting the image's HTTP
     # probe would report a permanent false failure.
     healthcheck:

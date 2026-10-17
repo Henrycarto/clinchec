@@ -1,7 +1,7 @@
 [project]
 name = "clinchec-forms"
 version = "0.1.0"
-description = "Clinchec Forms — PA form population and submission engine"
+description = "Clinchec Forms - PA form population and submission engine"
 requires-python = ">=3.12"
 
 [tool.ruff]

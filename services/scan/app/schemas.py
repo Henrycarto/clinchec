@@ -45,7 +45,7 @@ class CoverageStatus(StrEnum):
 
     Separate from the approval band on purpose. The band stays green/amber/red
     so the UI contract is unchanged, while this records what the score actually
-    rests on — the difference between "we evaluated the payer's criteria" and
+    rests on - the difference between "we evaluated the payer's criteria" and
     "the payer publishes nothing about this indication" is invisible in a
     number, and it changes what the clinician should do next.
     """
@@ -147,7 +147,7 @@ class ScoreDriver(BaseModel):
     #:
     #: The swing, not the award: a driver sitting at -0.13 that would pay +0.13
     #: moves the score by 0.26. Arithmetic over the score's own weights, which
-    #: is why it can be stated at all — it is not a probability. Clinchec has
+    #: is why it can be stated at all - it is not a probability. Clinchec has
     #: never observed a submitted request's outcome, so "raises approval odds
     #: by N%" would be invented where "adds 26 points" is checkable.
     potential_delta: float | None = Field(
@@ -161,7 +161,7 @@ class ScoreGap(BaseModel):
     """One documentation element the note is missing, and what it is worth.
 
     `missing_elements` carries the same text as a flat list and is kept for
-    callers that only want the prose — the justification drafter is one. This
+    callers that only want the prose - the justification drafter is one. This
     adds the driver it belongs to, which is what lets a caller say how much
     closing it would move the score. The two cannot be paired by position:
     functional impairment records a gap from a branch with no unmet driver, so
@@ -171,7 +171,7 @@ class ScoreGap(BaseModel):
     text: str
     #: The `ScoreDriver.key` this gap belongs to.
     driver_key: str
-    #: Points closing it would add, or None where nothing prices it — a gap
+    #: Points closing it would add, or None where nothing prices it - a gap
     #: recorded from a branch with no unmet driver, or one no documentation can
     #: close.
     potential_delta: float | None = None
@@ -181,7 +181,7 @@ class ScoreGap(BaseModel):
     #: back on appeal, while "general clinical guidance suggests it" is advice.
     required_by: str | None = None
     #: The payer clause that governed the request, verbatim. Not a sentence
-    #: about this specific element — payers do not write them that way — but the
+    #: about this specific element - payers do not write them that way - but the
     #: adjudication the requirement sits inside, which is what an appeal quotes.
     payer_quote: str | None = None
 
@@ -204,7 +204,7 @@ class ApprovalAssessment(BaseModel):
     #: thing to put in an appeal.
     matched_indication: str | None = None
     payer_quote: str | None = None
-    #: Payer clauses we could read but could not scope to a diagnosis code — the
+    #: Payer clauses we could read but could not scope to a diagnosis code - the
     #: payer's restriction, surfaced as a question for the clinician rather than
     #: applied to the score. Marking a clause advisory and then not showing it
     #: would be strictly worse than never extracting it.
@@ -244,9 +244,9 @@ class ExtractRequest(BaseModel):
         default=None,
         description="Optional plan type ('commercial' | 'medicare_advantage' | "
         "'medicaid' | 'exchange'). The same payer adjudicates the same CPT "
-        "differently by line of business — UnitedHealthcare states its own "
+        "differently by line of business - UnitedHealthcare states its own "
         "criteria for a knee replacement under a commercial plan and routes the "
-        "Medicare Advantage version to a CMS coverage determination — so "
+        "Medicare Advantage version to a CMS coverage determination - so "
         "omitting this scores against whichever rule the rules service returns "
         "by default.",
     )

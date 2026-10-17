@@ -1,7 +1,7 @@
 """Adapters emit indication-scoped clauses from real policy structure.
 
 The adjudication registry was validated in isolation. These tests prove it is
-actually wired into the adapter output — that a bulletin which both approves and
+actually wired into the adapter output - that a bulletin which both approves and
 excludes the same CPT produces two clauses of opposite polarity, from HTML
 shaped the way Aetna shapes it.
 
@@ -155,7 +155,7 @@ def test_root_tear_exclusion_is_advisory_because_icd10_cannot_scope_it(
     """Some payer distinctions are finer than the code set.
 
     Aetna covers arthroscopic meniscectomy for mechanical symptoms and excludes
-    it for meniscal root tears — but both code to M23.2xx. No prefix set
+    it for meniscal root tears - but both code to M23.2xx. No prefix set
     separates them, so any scope claimed for this exclusion is invented, and
     would either deny every meniscectomy or silently approve the excluded
     indication.
@@ -169,7 +169,7 @@ def test_root_tear_exclusion_is_advisory_because_icd10_cannot_scope_it(
     excluded = next(c for c in draft.clauses if c.polarity is Polarity.EXCLUDED)
     assert excluded.advisory is True
     assert excluded.indication_icd10_prefixes == [], (
-        "an ICD scope here would be fabricated — root tears and mechanical-symptom "
+        "an ICD scope here would be fabricated - root tears and mechanical-symptom "
         "tears share the M23.2xx family"
     )
 

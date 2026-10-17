@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
  * Sign-in.
  *
  * There is no password here by design. Clinchec never holds a clinician
- * credential — identity comes from the EHR over SMART on FHIR, so access is
+ * credential - identity comes from the EHR over SMART on FHIR, so access is
  * governed by the hospital's own directory, MFA and offboarding.
  */
 export default async function LoginPage({
@@ -60,7 +60,7 @@ export default async function LoginPage({
             <h2 className="text-base font-medium">Sign in with your EHR</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
               Clinchec uses SMART on FHIR. You authenticate with your hospital
-              credentials — Clinchec never sees or stores your password.
+              credentials - Clinchec never sees or stores your password.
             </p>
           </div>
 

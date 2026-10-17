@@ -2,7 +2,7 @@
 
 Hardcoded paths are a maintenance liability that compounds every time a payer
 reorganises. The August 2026 crawl validation made that concrete: every UHC path
-in the adapter was stale, and both BCBS licensee URLs were dead — one 404, one
+in the adapter was stale, and both BCBS licensee URLs were dead - one 404, one
 redirecting to an error page **with HTTP 200**, which no status-code check would
 have caught.
 
@@ -67,7 +67,7 @@ def parse_robots_sitemaps(robots_txt: str | bytes, base_url: str) -> list[str]:
     and some payers serve robots.txt with a content type that leaves it
     undecoded.
 
-    Falls back to the conventional /sitemap.xml when none are declared — most
+    Falls back to the conventional /sitemap.xml when none are declared - most
     sites have one even without advertising it.
     """
     found = [
@@ -93,7 +93,7 @@ def _resolve(value: str, base_url: str) -> str | None:
 
     No space after the colon and no scheme. `urljoin` treats a scheme-less
     value as a path, producing `https://www.bcbsil.com/bcbsil.com/sitemap.xml`
-    — a 503, and one that looks like the payer is down rather than like a
+- a 503, and one that looks like the payer is down rather than like a
     parsing bug on our side.
     """
     value = value.strip()
@@ -137,14 +137,14 @@ async def collect_urls(
 
     Failures are per-document and never fatal: one unreachable child sitemap
     costs its slice of coverage, not the whole crawl. A payer with no reachable
-    sitemap at all returns an empty list, and the adapter decides what to do —
+    sitemap at all returns an empty list, and the adapter decides what to do - 
     which should be "emit nothing" rather than "guess at paths", since guessing
     is what this exists to replace.
     """
     robots_url = urljoin(base_url, "/robots.txt")
     try:
         robots = await fetch(robots_url)
-    except Exception as exc:  # noqa: BLE001 — discovery degrades, never raises
+    except Exception as exc:  # noqa: BLE001 - discovery degrades, never raises
         logger.warning("sitemap: robots.txt unreachable at %s (%s)", robots_url, exc)
         robots = ""
 
@@ -210,7 +210,7 @@ def filter_urls(
 ) -> list[SitemapEntry]:
     """Entries matching any include pattern and no exclude pattern.
 
-    `require_host` guards against a sitemap pointing off-site — a real hazard
+    `require_host` guards against a sitemap pointing off-site - a real hazard
     when a payer's CMS syndicates content, and one that would otherwise have an
     adapter politely crawling somebody else's domain.
     """
